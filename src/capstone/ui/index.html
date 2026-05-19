@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Capstone — UW Bothell Course Advisor</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --fg: #111;
+    --muted: #666;
+    --accent: #4b2e83;     /* UW purple */
+    --accent-light: #b7a57a;  /* UW gold */
+    --border: #ddd;
+    --good: #2e7d32;
+    --warn: #b26a00;
+    --bad:  #b00020;
+    --card: #fff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.45;
+  }
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { margin: 0; font-size: 1.25rem; }
+  header .privacy {
+    background: rgba(255,255,255,.15);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+  main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .card h2 {
+    margin: 0 0 .75rem;
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--accent-light);
+    padding-bottom: .25rem;
+  }
+  .row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+  label { font-size: .85rem; color: var(--muted); display: block; margin-bottom: 2px; }
+  input[type=file], input[type=number], select {
+    padding: .4rem .5rem;
+    font: inherit;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #fff;
+  }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    padding: .55rem 1rem;
+    font: inherit;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { padding: 6px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid #eee; }
+  th { background: #f3f0f8; font-weight: 600; }
+  tr.in-plan { background: #f3fbe9; }
+  .pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    background: #eee;
+    color: #444;
+    margin-right: 4px;
+  }
+  .pill.good { background: #e7f5e7; color: var(--good); }
+  .pill.warn { background: #fef0d4; color: var(--warn); }
+  .pill.bad  { background: #fce4e7; color: var(--bad); }
+  .meta { font-size: 0.85rem; color: var(--muted); margin-top: .25rem; }
+  .warnings { color: var(--warn); }
+  .warnings li { margin-bottom: 2px; }
+  pre.json {
+    background: #1d1d22;
+    color: #eee;
+    padding: 12px;
+    border-radius: 6px;
+    overflow: auto;
+    max-height: 350px;
+    font-size: 0.78rem;
+  }
+  details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  .small { font-size: .82rem; }
+  .reasoning { color: #333; font-size: .82rem; max-width: 28em; }
+  .center { text-align: center; }
+  .status {
+    margin-left: .75rem;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Capstone — UW Bothell Course Advisor</h1>
+  <span class="privacy">🔒 Local-only · no data leaves this machine</span>
+</header>
+
+<main>
+  <!-- 1. Transcript upload -->
+  <section class="card">
+    <h2>1. Upload your UW transcript (PDF)</h2>
+    <div class="row">
+      <input type="file" id="pdfInput" accept="application/pdf" />
+      <button id="parseBtn" disabled>Parse transcript</button>
+      <span id="parseStatus" class="status"></span>
+    </div>
+    <p class="meta">
+      Your transcript stays on this device. It is never uploaded anywhere
+      except the local FastAPI server on <code>127.0.0.1</code>.
+    </p>
+    <div id="transcriptSummary" class="meta" hidden></div>
+  </section>
+
+  <!-- 2. Preferences -->
+  <section class="card">
+    <h2>2. Your preferences</h2>
+    <div class="row">
+      <div>
+        <label for="major">Major</label>
+        <select id="major">
+          <option value="CSSE" selected>CSSE — Computer Science & Software Engineering</option>
+          <option value="OTHER" disabled>Other majors — Phase 5 (not yet implemented)</option>
+        </select>
+      </div>
+      <div>
+        <label for="quarter">Target quarter</label>
+        <select id="quarter">
+          <option value="AUT" selected>Autumn</option>
+          <option value="WIN">Winter</option>
+          <option value="SPR">Spring</option>
+          <option value="SUM">Summer</option>
+        </select>
+      </div>
+      <div>
+        <label for="creditLoad">Desired credit load</label>
+        <input type="number" id="creditLoad" value="15" min="3" max="25" step="1" />
+      </div>
+      <div>
+        <label for="topN">Show top N</label>
+        <input type="number" id="topN" value="10" min="3" max="30" step="1" />
+      </div>
+      <div>
+        <label for="useLlm">LLM reasoning</label>
+        <select id="useLlm">
+          <option value="false" selected>Rule-based only (fast)</option>
+          <option value="true">Use local LLM (slower, adds reasoning)</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Recommendations -->
+  <section class="card">
+    <div class="row" style="justify-content: space-between;">
+      <h2 style="border: 0; margin: 0;">3. Recommendations</h2>
+      <button id="recommendBtn" disabled>Generate plan</button>
+    </div>
+    <div id="recStatus" class="status"></div>
+    <div id="warningsBox" hidden>
+      <h3 style="margin-top: 1rem; font-size: .95rem; color: var(--warn);">Warnings</h3>
+      <ul class="warnings" id="warnings"></ul>
+    </div>
+    <div id="planSummary" class="meta" hidden></div>
+    <table id="recsTable" hidden>
+      <thead>
+        <tr>
+          <th>#</th><th>Course</th><th>Title</th><th>Cr</th>
+          <th>Score</th><th>Crit</th><th>Prog</th><th>Avail</th>
+          <th>In plan</th><th>Reasoning</th>
+        </tr>
+      </thead>
+      <tbody id="recsBody"></tbody>
+    </table>
+  </section>
+
+  <!-- 4. Parsed transcript JSON (debug) -->
+  <section class="card">
+    <details>
+      <summary>Parsed transcript JSON (debug)</summary>
+      <pre class="json" id="transcriptJson">— upload a transcript above —</pre>
+    </details>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+let parsedTranscript = null;
+
+// Detect when the page is being viewed without a real HTTP origin
+// (file://, about:blank, or a sandboxed preview). Relative fetches
+// don't work there — surface a clear message instead of the cryptic
+// "Failed to parse URL from /api/...".
+const SERVED_BY_API = ["http:", "https:"].includes(window.location.protocol)
+  && window.location.host;
+
+if (!SERVED_BY_API) {
+  document.body.insertAdjacentHTML("afterbegin", `
+    <div style="background:#fef0d4;border-bottom:1px solid #b26a00;
+                color:#7a4500;padding:.6rem 1rem;font-size:.9rem;">
+      ⚠️ This page isn't being served by the Capstone FastAPI backend.
+      Relative API calls won't work here. Start the server in a terminal:
+      <code style="background:#fff;padding:0 4px;border-radius:3px;">capstone serve</code>
+      and open <code style="background:#fff;padding:0 4px;border-radius:3px;">http://127.0.0.1:8765</code>.
+    </div>
+  `);
+}
+
+function apiFetch(path, options) {
+  if (!SERVED_BY_API) {
+    return Promise.reject(new Error(
+      "The UI must be opened via the FastAPI server. Run `capstone serve` and visit http://127.0.0.1:8765."
+    ));
+  }
+  return fetch(path, options);
+}
+
+$("pdfInput").addEventListener("change", () => {
+  $("parseBtn").disabled = !$("pdfInput").files?.length;
+});
+
+$("parseBtn").addEventListener("click", async () => {
+  const f = $("pdfInput").files[0];
+  if (!f) return;
+  const fd = new FormData();
+  fd.append("file", f);
+  $("parseStatus").innerHTML = '<span class="spinner"></span> Parsing…';
+  try {
+    const r = await apiFetch("/api/parse-transcript", { method: "POST", body: fd });
+    if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+    parsedTranscript = await r.json();
+    $("transcriptJson").textContent = JSON.stringify(parsedTranscript, null, 2);
+    const sum = $("transcriptSummary");
+    sum.hidden = false;
+    sum.innerHTML = `
+      <strong>${parsedTranscript.student_name ?? "(unknown student)"}</strong>
+      &middot; ${parsedTranscript.major ?? "(no major)"}
+      &middot; ${parsedTranscript.class_standing ?? "?"} standing
+      &middot; ${parsedTranscript.completed.length} completed
+      &middot; ${parsedTranscript.in_progress.length} in-progress
+      &middot; cumulative GPA ${parsedTranscript.cumulative_gpa ?? "?"}
+    `;
+    if (parsedTranscript.major) $("major").value = parsedTranscript.major;
+    $("parseStatus").textContent = "✓ Parsed";
+    $("recommendBtn").disabled = false;
+  } catch (e) {
+    $("parseStatus").innerHTML = `<span style="color: var(--bad);">✗ ${e.message}</span>`;
+  }
+});
+
+$("recommendBtn").addEventListener("click", async () => {
+  if (!parsedTranscript) return;
+  $("recStatus").innerHTML = '<span class="spinner"></span> Generating recommendations…';
+  $("recsTable").hidden = true;
+  $("warningsBox").hidden = true;
+
+  const body = {
+    transcript: parsedTranscript,
+    target_quarter: $("quarter").value,
+    credit_load: parseInt($("creditLoad").value, 10),
+    top_n: parseInt($("topN").value, 10),
+    use_llm: $("useLlm").value === "true",
+    major_override: $("major").value,
+  };
+  try {
+    const r = await apiFetch("/api/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+    const result = await r.json();
+    renderResult(result);
+    $("recStatus").textContent = result.used_llm
+      ? "✓ Reranked by local LLM"
+      : "✓ Rule-based (no LLM)";
+  } catch (e) {
+    $("recStatus").innerHTML = `<span style="color: var(--bad);">✗ ${e.message}</span>`;
+  }
+});
+
+function renderResult(result) {
+  const tbody = $("recsBody");
+  tbody.innerHTML = "";
+  for (const r of result.recommendations) {
+    const tr = document.createElement("tr");
+    if (r.fits_load) tr.classList.add("in-plan");
+
+    // Soft-prereq pills: green = prep done, yellow = prep missing
+    const softPills = [
+      ...(r.completed_soft_prereqs ?? []).map(
+        (c) => `<span class="pill good" title="Prep done">✓ ${c}</span>`),
+      ...(r.missing_soft_prereqs ?? []).map(
+        (c) => `<span class="pill warn" title="Soft prereq — would make this easier">↑ ${c}</span>`),
+    ].join(" ");
+
+    tr.innerHTML = `
+      <td>${r.rank}</td>
+      <td><strong>${r.course_id}</strong>${softPills ? "<br>" + softPills : ""}</td>
+      <td>${escapeHtml(r.title ?? "")}</td>
+      <td>${r.credit_hours}</td>
+      <td>${r.score.toFixed(2)}</td>
+      <td>${r.criticality_score.toFixed(2)}</td>
+      <td>${r.progress_score.toFixed(2)}</td>
+      <td>${r.availability_score.toFixed(2)}</td>
+      <td>${r.fits_load ? '<span class="pill good">✓ in plan</span>' : ""}</td>
+      <td class="reasoning">${escapeHtml(r.reasoning ?? "")}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  $("recsTable").hidden = false;
+
+  const ps = $("planSummary");
+  ps.hidden = false;
+  ps.innerHTML = `Plan total: <strong>${result.total_credits}</strong> credits
+                  (target ${result.target_load} ±2)
+                  · target quarter: ${result.target_quarter ?? "any"}`;
+
+  const wb = $("warningsBox");
+  const ul = $("warnings");
+  ul.innerHTML = "";
+  if (result.warnings && result.warnings.length) {
+    for (const w of result.warnings) {
+      const li = document.createElement("li");
+      li.textContent = w;
+      ul.appendChild(li);
+    }
+    wb.hidden = false;
+  } else {
+    wb.hidden = true;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+</script>
+</body>
+</html>

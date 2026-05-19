@@ -1,0 +1,65 @@
+# Capstone — Configuration
+# Adjust weights and scraper settings without code changes.
+
+scraper:
+  rate_limit_seconds: 1.0
+  user_agent: "Capstone/1.0 (UWB Course Advisor; capstone-app@uw.edu)"
+  stale_after_days: 30
+  # Departments to scrape from the Bothell catalog (crscatb)
+  # Each entry is the filename stem, e.g., "css" → crscatb/css.html
+  bothell_departments:
+    - css       # Computing & Software Systems
+    - cssskl    # CSS Skills labs
+    - stmath    # Science & Technology Mathematics
+    - bwrit     # Writing
+    - bbus      # Business
+    - bcore     # Core / gen-ed
+    - bearth    # Earth System Science
+    - bbio      # Biology
+    - bchem     # Chemistry
+    - bphys     # Physics
+    - bis       # Interdisciplinary Studies
+    - bdata     # Data Science
+    - acmpt     # Applied Computing
+    - bimd      # Interactive Media Design
+    - beduc     # Education
+    - bacct     # Accounting
+    - bbecn     # Business Economics
+    - bbskl     # Business Skills
+    - bhlth     # Health
+    - bhs       # Health Studies
+    - bnurs     # Nursing
+    - bce       # Computer Engineering
+    - bee       # Electrical Engineering
+    - bengr     # Engineering
+    - bmath     # Mathematics
+    - bme       # Mechanical Engineering
+    - bst       # Science & Technology
+    - barab     # Arabic
+    - bchin     # Chinese
+    - blead     # Leadership Studies
+    - bjapan    # Japanese
+    - bkorea    # Korean
+    - bspan     # Spanish
+    - bcusp     # University Studies & Programs
+
+  # Quarters to scrape from the time schedule
+  # Format: "{QTR}{YEAR}" where QTR is SPR, SUM, AUT, WIN
+  time_schedule_quarters:
+    - "SUM2026"
+    - "AUT2026"
+
+database:
+  # Use "project" to store in the project directory, or an absolute path
+  path: "project"
+
+ranking_weights:
+  criticality: 0.30
+  availability: 0.20
+  progress: 0.30
+  synergy: 0.10          # bonus when soft "prep" prereqs are completed
+  balance_penalty: 0.10
+
+credit_limits:
+  default: 15
+  hard_ceiling: 25      # Past this, registering is overkill

@@ -1,0 +1,222 @@
+{
+  "student_name": "Krish Marpuri",
+  "student_id": "2429082",
+  "campus": "Bothell",
+  "major": "CSSE",
+  "class_standing": "JUNIOR",
+  "current_quarter": "SPRING QUARTER, 2026",
+  "completed": [
+    {
+      "course_id": "B CORE 104",
+      "title": "DISC CORE: ART & HUM",
+      "credits": 5.0,
+      "grade": "3.7",
+      "quarter": "AUT",
+      "year": 2024
+    },
+    {
+      "course_id": "CSS 142",
+      "title": "CMPT PROG I",
+      "credits": 5.0,
+      "grade": "3.8",
+      "quarter": "AUT",
+      "year": 2024
+    },
+    {
+      "course_id": "CSSSKL 142",
+      "title": "CMPT PROG SKILLS I",
+      "credits": 1.0,
+      "grade": "CR",
+      "quarter": "AUT",
+      "year": 2024
+    },
+    {
+      "course_id": "STMATH 124",
+      "title": "CALCULUS I",
+      "credits": 5.0,
+      "grade": "4.0",
+      "quarter": "AUT",
+      "year": 2024
+    },
+    {
+      "course_id": "B WRIT 134",
+      "title": "COMPOSITION",
+      "credits": 5.0,
+      "grade": "4.0",
+      "quarter": "WIN",
+      "year": 2025
+    },
+    {
+      "course_id": "CSS 143",
+      "title": "CMPT PROG II",
+      "credits": 5.0,
+      "grade": "3.0",
+      "quarter": "WIN",
+      "year": 2025
+    },
+    {
+      "course_id": "CSSSKL 143",
+      "title": "CMPT PROG SKILLS II",
+      "credits": 1.0,
+      "grade": "CR",
+      "quarter": "WIN",
+      "year": 2025
+    },
+    {
+      "course_id": "STMATH 125",
+      "title": "CALCULUS II",
+      "credits": 5.0,
+      "grade": "3.9",
+      "quarter": "WIN",
+      "year": 2025
+    },
+    {
+      "course_id": "B BUS 215",
+      "title": "INTRO TO BUS STATS",
+      "credits": 5.0,
+      "grade": "3.7",
+      "quarter": "SPR",
+      "year": 2025
+    },
+    {
+      "course_id": "B WRIT 135",
+      "title": "RESEARCH WRITING",
+      "credits": 5.0,
+      "grade": "4.0",
+      "quarter": "SPR",
+      "year": 2025
+    },
+    {
+      "course_id": "BEARTH 320",
+      "title": "CLIMATE IMPACTS",
+      "credits": 5.0,
+      "grade": "3.1",
+      "quarter": "SPR",
+      "year": 2025
+    },
+    {
+      "course_id": "CSS 342",
+      "title": "DATA, ALG, MATH I",
+      "credits": 5.0,
+      "grade": "3.2",
+      "quarter": "AUT",
+      "year": 2025
+    },
+    {
+      "course_id": "STMATH 126",
+      "title": "CALCULUS III",
+      "credits": 5.0,
+      "grade": "3.5",
+      "quarter": "AUT",
+      "year": 2025
+    },
+    {
+      "course_id": "STMATH 207",
+      "title": "INTRO TO DIFF EQ",
+      "credits": 5.0,
+      "grade": "4.0",
+      "quarter": "AUT",
+      "year": 2025
+    },
+    {
+      "course_id": "CSS 301",
+      "title": "W-TECHNICAL WRITING",
+      "credits": 5.0,
+      "grade": "3.0",
+      "quarter": "WIN",
+      "year": 2026
+    },
+    {
+      "course_id": "CSS 343",
+      "title": "DATA, ALG, MATH II",
+      "credits": 5.0,
+      "grade": "3.5",
+      "quarter": "WIN",
+      "year": 2026
+    },
+    {
+      "course_id": "STMATH 208",
+      "title": "MATRIX ALGEBRA",
+      "credits": 5.0,
+      "grade": "4.0",
+      "quarter": "WIN",
+      "year": 2026
+    }
+  ],
+  "in_progress": [
+    {
+      "course_id": "CSS 382",
+      "title": "INTRO TO AI",
+      "credits": 5.0,
+      "quarter": "SPR",
+      "year": 2026
+    },
+    {
+      "course_id": "STMATH 224",
+      "title": "MULTIVAR CALCULUS",
+      "credits": 5.0,
+      "quarter": "SPR",
+      "year": 2026
+    }
+  ],
+  "transfer_credits": [
+    {
+      "course_id": "CHEM 142",
+      "title": "IB CHEMISTRY",
+      "credits": 5.0,
+      "source": "IB",
+      "date_range": "05/01/24-07/08/24"
+    },
+    {
+      "course_id": "ENGL 107",
+      "title": "IB ENG LANG & LIT",
+      "credits": 5.0,
+      "source": "IB",
+      "date_range": "05/01/24-07/08/24"
+    },
+    {
+      "course_id": "MATH 120",
+      "title": "IB MATH ANALY APPR",
+      "credits": 5.0,
+      "source": "IB",
+      "date_range": "05/01/24-07/08/24"
+    },
+    {
+      "course_id": "PHYS 101",
+      "title": "IB PHYSICS",
+      "credits": 5.0,
+      "source": "IB",
+      "date_range": "05/01/24-07/08/24"
+    },
+    {
+      "course_id": "PHYS 102",
+      "title": "IB PHYSICS",
+      "credits": 5.0,
+      "source": "IB",
+      "date_range": "05/01/24-07/08/24"
+    },
+    {
+      "course_id": "SPAN 102",
+      "title": "IB SPAN AB",
+      "credits": 5.0,
+      "source": "IB",
+      "date_range": "05/01/24-07/08/24"
+    }
+  ],
+  "placement_tests": [
+    {
+      "test_type": "FYCDSP",
+      "score": "01",
+      "date": "07/31/24"
+    },
+    {
+      "test_type": "MTHDSP",
+      "score": "500",
+      "date": "05/06/24"
+    }
+  ],
+  "cumulative_gpa": 3.63,
+  "total_credits_earned": 107.0,
+  "uw_credits_earned": 77.0,
+  "parse_warnings": []
+}
