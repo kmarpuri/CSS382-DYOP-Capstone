@@ -49,6 +49,11 @@ class Recommendation(BaseModel):
     reasoning: str | None = None
     completed_soft_prereqs: list[str] = Field(default_factory=list)
     missing_soft_prereqs: list[str] = Field(default_factory=list)
+    # Best available instructor rating across this course's scheduled
+    # sections, sourced from the optional RateMyProfessor cache. Null
+    # when no rating is on file. The "best" tiebreaker is num_ratings
+    # so single-review outliers don't surface as "5 stars".
+    best_instructor: dict | None = None
 
 
 class RecommendationResult(BaseModel):
@@ -87,6 +92,7 @@ class Recommender:
         credit_load: int | None = None,
         top_n: int = 10,
         use_llm: bool = True,
+        user_prompt: str = "",
     ) -> RecommendationResult:
         if credit_load is None:
             credit_load = self.config.credit_limits.default
@@ -123,6 +129,7 @@ class Recommender:
                     ranked[: max(top_n * 2, 20)],
                     transcript=transcript,
                     target_quarter=target_quarter,
+                    user_prompt=user_prompt,
                 )
                 warnings.extend(llm_warnings)
                 llm_used = True
@@ -138,6 +145,13 @@ class Recommender:
         # Build output recommendations
         w = self.config.ranking_weights
         completed = {c.course_id for c in transcript.completed if not c.is_withdrawn}
+
+        # Look up cached instructor ratings for every recommended course
+        # in one pass so we don't N+1 the DB.
+        course_to_best_instructor = self._lookup_best_instructors(
+            [s.course_id for s in ranked[:top_n]], target_quarter,
+        )
+
         recs: list[Recommendation] = []
         for i, s in enumerate(ranked[:top_n], 1):
             soft_edges = [
@@ -170,6 +184,7 @@ class Recommender:
                     reasoning=getattr(s, "reasoning", None),
                     completed_soft_prereqs=done_soft,
                     missing_soft_prereqs=missing_soft,
+                    best_instructor=course_to_best_instructor.get(s.course_id),
                 )
             )
 
@@ -181,6 +196,71 @@ class Recommender:
             used_llm=llm_used,
             target_quarter=target_quarter,
         )
+
+    # ── Instructor ratings ─────────────────────────────────────────────
+
+    def _lookup_best_instructors(
+        self,
+        course_ids: list[str],
+        target_quarter: str | None,
+    ) -> dict[str, dict]:
+        """Return ``{course_id: best_rating_dict}`` from cached RMP data.
+
+        "Best" = highest ``num_ratings`` among the course's sections in
+        the target quarter, then by ``avg_rating``. Courses without
+        scheduled sections (or whose instructors aren't in the cache)
+        are simply absent from the result.
+        """
+        if not course_ids:
+            return {}
+        try:
+            from capstone.scrapers.ratemyprofessor import lookup_ratings
+        except Exception:
+            return {}
+
+        # Pull instructor names for each course in this quarter
+        qmark = ",".join(["?"] * len(course_ids))
+        params: list = list(course_ids)
+        sql = (
+            f"SELECT course_id, instructor FROM time_schedule "
+            f"WHERE course_id IN ({qmark}) AND instructor IS NOT NULL "
+            f"AND TRIM(instructor) != ''"
+        )
+        if target_quarter:
+            sql += " AND quarter = ?"
+            params.append(target_quarter)
+        try:
+            rows = self.conn.execute(sql, params).fetchall()
+        except Exception:
+            return {}
+
+        by_course: dict[str, list[str]] = {}
+        for r in rows:
+            by_course.setdefault(r["course_id"], []).append(r["instructor"])
+
+        # Look up every distinct instructor once
+        all_names = sorted({n for names in by_course.values() for n in names})
+        ratings = lookup_ratings(self.conn, all_names)
+
+        result: dict[str, dict] = {}
+        for cid, names in by_course.items():
+            best = None
+            for n in names:
+                r = ratings.get(n)
+                if r is None or r.get("avg_rating") is None:
+                    continue
+                if (
+                    best is None
+                    or (r.get("num_ratings") or 0) > (best.get("num_ratings") or 0)
+                    or (
+                        (r.get("num_ratings") or 0) == (best.get("num_ratings") or 0)
+                        and (r.get("avg_rating") or 0) > (best.get("avg_rating") or 0)
+                    )
+                ):
+                    best = r
+            if best is not None:
+                result[cid] = best
+        return result
 
     # ── Fill-to-N ──────────────────────────────────────────────────────
 

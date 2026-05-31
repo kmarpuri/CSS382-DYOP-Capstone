@@ -20,7 +20,7 @@ class CSSEProgramScraper(ProgramScraper):
     """Populate CSSE major requirements + synergies."""
 
     major_code = "CSSE"
-    major_name = "Computer Science & Software Engineering"
+    major_name = "Computer Science & Software Engineering (B.S.)"
 
     CORE = [
         "CSS 301",   # Technical Writing for Computing Professionals

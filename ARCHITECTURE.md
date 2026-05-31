@@ -17,7 +17,7 @@ Build a desktop course-recommendation app for UW Bothell undergraduates that:
 | 2 | Transcript PDF parser → `Transcript` Pydantic model | `capstone parse-transcript FILE.pdf` |
 | 3 | Prereq DAG + deterministic ranker + fill-to-N planner | `capstone recommend TRANSCRIPT.json --no-llm` |
 | 4 | Ollama-backed reasoner + FastAPI + bundled UI | `capstone serve` |
-| 5 | Additional major scrapers (future) | (architecture only; no code yet) |
+| 5 | Additional major scrapers — Math, Biology, Business, IMD, CE, Applied Computing | parametrized test suite over the full registry |
 
 Each phase is independently runnable so the previous phases stay verifiable as you build on top of them.
 
@@ -165,19 +165,36 @@ The spec calls this out explicitly: *"every `course_id` the LLM returns MUST be 
 
 If validation drops everything, we fall back to the deterministic order with a clear warning rather than refusing to recommend.
 
-## 8. Extending to a new major (Phase 5)
+## 8. Extending to a new major
+
+Adding a major is two small changes — no other module touches:
 
 ```python
-# src/capstone/scrapers/programs/math.py
+# src/capstone/scrapers/programs/cybersec.py
 from capstone.scrapers.base import ProgramScraper
 
-class MathProgramScraper(ProgramScraper):
-    major_code = "MATH"
-    major_name = "Mathematics"
+class CybersecurityProgramScraper(ProgramScraper):
+    major_code = "CSEC"
+    major_name = "Cybersecurity Engineering"
 
-    def scrape_requirements(self, conn: sqlite3.Connection) -> int:
-        # populate major_requirements rows for MATH
-        ...
+    CORE = ["CSS 310", "CSS 422", "CSS 430", "CSS 480"]
+    CAPSTONE = ["CSS 499"]
+
+    synergies = [
+        ("CSS 480", ["CSS 422"],
+         "Network security assumes the OS/memory background from Hardware."),
+    ]
+
+    def scrape_requirements(self, conn):
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        self._clear_existing_requirements(conn)
+        count = 0
+        count += self._insert_each(conn, "core", self.CORE)
+        count += self._insert_each(conn, "capstone", self.CAPSTONE)
+        self.seed_synergies(conn)
+        self._record_scrape_metadata(conn, timestamp=now, record_count=count)
+        return count
 ```
 
 Then register it in `programs/__init__.py`:
@@ -185,11 +202,16 @@ Then register it in `programs/__init__.py`:
 ```python
 PROGRAM_SCRAPERS = {
     "CSSE": CSSEProgramScraper,
-    "MATH": MathProgramScraper,    # ← new
+    ...
+    "CSEC": CybersecurityProgramScraper,    # ← new
 }
 ```
 
-That's it. No changes needed in the ranker, recommender, parser, LLM layer, or UI.
+That's it. The CLI, FastAPI `/api/majors` endpoint, web UI dropdown,
+LLM synergy prompt, parametrized test suite, and synergy seeder all
+pick it up automatically. The parametrized tests in
+`tests/test_phase5_majors.py` exercise the new scraper without any
+new test code.
 
 ## 9. Privacy guarantees in code
 

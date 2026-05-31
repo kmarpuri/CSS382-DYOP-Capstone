@@ -24,6 +24,14 @@ from capstone.config import PROJECT_ROOT, load_config
 from capstone.db.connection import get_connection
 from capstone.db.schema import get_scrape_stats, init_db, reset_db
 
+# Auto-load .env so GROQ_API_KEY etc. are visible to the process.
+# Fails silently if python-dotenv isn't installed (it's in the `llm` extra).
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env")
+except ImportError:
+    pass
+
 console = Console()
 
 
@@ -66,7 +74,13 @@ def scrape() -> None:
 @click.option(
     "--no-requirements",
     is_flag=True,
-    help="Skip CSSE requirements population",
+    help="Skip program requirements population",
+)
+@click.option(
+    "--major",
+    "-m",
+    multiple=True,
+    help="Only seed requirements for these majors (default: all registered)",
 )
 @click.option(
     "--reset",
@@ -77,9 +91,10 @@ def scrape_refresh(
     departments: tuple[str, ...],
     no_timeschedule: bool,
     no_requirements: bool,
+    major: tuple[str, ...],
     reset: bool,
 ) -> None:
-    """Scrape the UW Bothell course catalog, time schedule, and CSSE requirements."""
+    """Scrape the UW Bothell course catalog, time schedule, and program requirements."""
     config = load_config()
     db_path = config.database.resolve_path(PROJECT_ROOT)
 
@@ -142,22 +157,42 @@ def scrape_refresh(
             ts_count = 0
             console.print("[dim]Skipping time schedule (--no-timeschedule)[/dim]")
 
-        # ── 3. CSSE Requirements ──────────────────────────────────
+        # ── 3. Program Requirements (all registered majors) ───────
         if not no_requirements:
-            console.print("\n[bold]🎓 Populating CSSE Requirements...[/bold]")
+            from capstone.scrapers.programs import PROGRAM_SCRAPERS
 
-            from capstone.scrapers.programs import get_program_scraper
+            if major:
+                wanted = {m.upper() for m in major}
+                scrapers_to_run = {
+                    code: cls for code, cls in PROGRAM_SCRAPERS.items()
+                    if code in wanted
+                }
+                missing = wanted - set(scrapers_to_run)
+                for code in missing:
+                    console.print(
+                        f"[yellow]⚠ No registered scraper for major "
+                        f"'{code}'.[/yellow]"
+                    )
+            else:
+                scrapers_to_run = PROGRAM_SCRAPERS
 
-            try:
-                csse_scraper = get_program_scraper("CSSE")
-                req_count = csse_scraper.scrape_requirements(conn)
-                console.print(
-                    f"[green]✓ Inserted {req_count} CSSE requirements[/green]"
-                )
-            except Exception as e:
-                console.print(f"[red]✗ CSSE requirements failed: {e}[/red]")
-                logging.exception("CSSE requirements error")
-                req_count = 0
+            console.print(
+                f"\n[bold]🎓 Populating Requirements for "
+                f"{len(scrapers_to_run)} major(s)...[/bold]"
+            )
+
+            req_count = 0
+            for code, scraper_cls in scrapers_to_run.items():
+                try:
+                    n = scraper_cls().scrape_requirements(conn)
+                    console.print(
+                        f"  [green]✓[/green] {code:8s} "
+                        f"({scraper_cls.major_name}): {n} requirement rows"
+                    )
+                    req_count += n
+                except Exception as e:
+                    console.print(f"  [red]✗ {code} failed: {e}[/red]")
+                    logging.exception(f"{code} requirements error")
         else:
             req_count = 0
             console.print("[dim]Skipping requirements (--no-requirements)[/dim]")
@@ -183,6 +218,47 @@ def scrape_refresh(
         table.add_row("Time Schedule Sections", str(total_sections))
         table.add_row("Major Requirements", str(total_reqs))
         console.print(table)
+
+
+@scrape.command("professors")
+@click.option("--limit", type=int, default=None,
+              help="Stop after N professors (debug / quick refresh)")
+@click.option("--force", is_flag=True,
+              help="Re-fetch even professors whose cache is still fresh")
+@click.option("--school", default=None,
+              help='RMP school name (default: UW Bothell). '
+                   'Also settable via CAPSTONE_RMP_SCHOOL env var.')
+def scrape_professors(limit: int | None, force: bool, school: str | None) -> None:
+    """Scrape RateMyProfessor for the configured school.
+
+    \b
+    ⚠️  RateMyProfessors.com's ToS prohibits automated access; this
+    scraper is for academic/personal use only. Aggregate scores are
+    cached in your local SQLite (default 30-day TTL). Use at your own
+    risk and do not republish the data.
+    """
+    from capstone.scrapers.ratemyprofessor import RateMyProfessorScraper
+
+    config = load_config()
+    db_path = config.database.resolve_path(PROJECT_ROOT)
+    if not db_path.exists():
+        console.print("[red]No course DB. Run 'capstone scrape refresh' first.[/red]")
+        sys.exit(1)
+
+    console.print(
+        "[yellow]Note:[/yellow] this fetches publicly-visible aggregate "
+        "ratings from RateMyProfessors.com. Strictly opt-in. See "
+        "[dim]src/capstone/scrapers/ratemyprofessor.py[/dim] for the ToS notice."
+    )
+
+    scraper = RateMyProfessorScraper(school_name=school)
+    try:
+        with get_connection(db_path) as conn:
+            init_db(conn)
+            count = scraper.scrape(conn, limit=limit, force_refresh=force)
+        console.print(f"[green]✓ {count} professors updated[/green]")
+    finally:
+        scraper.close()
 
 
 @scrape.command("status")
@@ -268,6 +344,8 @@ def parse_transcript_cmd(pdf_path: Path, output: Path | None, debug: bool) -> No
 @click.option("--quarter", default=None, help="Target quarter (e.g., AUT2026)")
 @click.option("--no-llm", is_flag=True, help="Skip LLM reasoning, return rule-based output only")
 @click.option("--major", default=None, help="Override the major declared on the transcript")
+@click.option("--prompt", "user_prompt", default="",
+              help='Free-form constraints for the LLM (e.g., "prefer mornings, no Fridays")')
 def recommend_cmd(
     transcript_json: Path,
     credit_load: int | None,
@@ -275,6 +353,7 @@ def recommend_cmd(
     quarter: str | None,
     no_llm: bool,
     major: str | None,
+    user_prompt: str,
 ) -> None:
     """Generate ranked course recommendations from a parsed transcript."""
     from capstone.transcript.models import Transcript
@@ -307,6 +386,7 @@ def recommend_cmd(
             credit_load=credit_load,
             top_n=top_n,
             use_llm=not no_llm,
+            user_prompt=user_prompt,
         )
 
     # Render
@@ -381,7 +461,16 @@ def serve_cmd(host: str, port: int, reload: bool) -> None:
 
 
 def _maybe_run_first_run(console_) -> None:
-    """If this is the user's first LLM-using run, walk through setup."""
+    """If this is the user's first LLM-using run, walk through setup.
+
+    Silently skipped in non-interactive environments (Docker, CI,
+    piped stdin) — the wizard's confirmation prompts would otherwise
+    hang or abort the process. Set ``CAPSTONE_SKIP_FIRSTRUN=1`` to
+    force-skip even with a TTY.
+    """
+    import os
+    import sys
+
     try:
         from capstone.firstrun import is_first_run, run_first_run_setup
     except Exception as e:
@@ -389,6 +478,17 @@ def _maybe_run_first_run(console_) -> None:
         return
 
     if not is_first_run():
+        return
+
+    if os.environ.get("CAPSTONE_SKIP_FIRSTRUN"):
+        logging.info("First-run wizard skipped (CAPSTONE_SKIP_FIRSTRUN set).")
+        return
+
+    if not sys.stdin.isatty():
+        logging.info(
+            "First-run wizard skipped (non-interactive stdin). "
+            "Run 'capstone setup' in a terminal to configure the LLM."
+        )
         return
 
     console_.print(

@@ -1,12 +1,20 @@
 """Pluggable LLM backend.
 
 ``LLMBackend`` is the abstract interface; ``OllamaBackend`` is the
-default implementation. The backend is intentionally minimal — it
-just exposes a single ``generate_json`` method — so MLX or other
-runtimes can be swapped in without touching ``LLMReasoner``.
+local default and ``GroqBackend`` is the hosted free-tier option
+(used when the app is deployed to a public website). The backend is
+intentionally minimal — it just exposes a single ``generate_json``
+method — so MLX, vLLM, or other runtimes can be swapped in without
+touching ``LLMReasoner``.
 
-All inference is strictly local. No transcript data is allowed to
-leave the machine.
+Two backends, two privacy postures:
+
+* ``OllamaBackend.requires_redaction = False`` — all inference is
+  local, so the full transcript object can be reasoned over.
+* ``GroqBackend.requires_redaction = True`` — payload is sent to a
+  hosted API, so ``LLMReasoner`` strips PII via
+  :func:`capstone.llm.redact.redact_for_external` before building
+  the prompt.
 """
 
 from __future__ import annotations
@@ -21,7 +29,14 @@ logger = logging.getLogger(__name__)
 
 
 class LLMBackend(ABC):
-    """Abstract local-LLM backend."""
+    """Abstract LLM backend."""
+
+    # Hosted backends override this to True so the reasoner knows to
+    # scrub PII out of the transcript before building the prompt.
+    requires_redaction: bool = False
+
+    # Human-readable name for the UI's privacy banner.
+    provider_name: str = "local"
 
     @property
     @abstractmethod
@@ -39,9 +54,110 @@ class LLMBackend(ABC):
         ...
 
 
+class GroqBackend(LLMBackend):
+    """Hosted backend backed by Groq's free-tier inference API.
+
+    Defaults to ``llama-3.3-70b-versatile`` because:
+      * It's free on Groq's developer tier.
+      * It supports OpenAI-style JSON mode (``response_format``).
+      * Sub-second inference makes the UI feel local.
+      * Groq's free-tier TOS does not claim training rights on your data.
+
+    The API key is read from the ``GROQ_API_KEY`` environment variable
+    (or a ``.env`` file in the project root) — it must NEVER be
+    committed to the repo.
+    """
+
+    requires_redaction = True
+    provider_name = "Groq (hosted)"
+
+    DEFAULT_MODEL = "llama-3.3-70b-versatile"
+
+    def __init__(self, model: str | None = None, api_key: str | None = None):
+        try:
+            from groq import Groq  # noqa: F401
+        except ImportError as e:
+            raise RuntimeError(
+                "groq Python client not installed. "
+                "Run: pip install 'capstone[llm]'"
+            ) from e
+
+        self._api_key = api_key or os.environ.get("GROQ_API_KEY")
+        if not self._api_key:
+            raise RuntimeError(
+                "GROQ_API_KEY is not set. Add it to your .env file or export "
+                "it before running. Never commit the key to the repo."
+            )
+
+        self._model = (
+            model
+            or os.environ.get("CAPSTONE_LLM_MODEL")
+            or self.DEFAULT_MODEL
+        )
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    def generate_json(
+        self,
+        system: str,
+        prompt: str,
+        schema: dict[str, Any] | None = None,
+        max_retries: int = 2,
+    ) -> dict[str, Any]:
+        from groq import Groq
+
+        client = Groq(api_key=self._api_key)
+        last_err: Exception | None = None
+
+        # Groq's response_format=json_object validator requires the word
+        # "json" to appear somewhere in the messages. The real reasoner
+        # prompt already does, but for safety we append a marker so any
+        # future caller can't accidentally trip the 400.
+        json_marker = "" if "json" in (system + prompt).lower() else (
+            "\n\n(Respond in JSON only.)"
+        )
+
+        # Groq honors the OpenAI-style response_format. The model is
+        # instructed to emit JSON via the system prompt; response_format
+        # rejects non-JSON output server-side.
+        for attempt in range(max_retries + 1):
+            try:
+                resp = client.chat.completions.create(
+                    model=self._model,
+                    messages=[
+                        {"role": "system", "content": system + json_marker},
+                        {"role": "user", "content": prompt},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.1,
+                    max_tokens=2048,
+                )
+                content = resp.choices[0].message.content
+                if not content:
+                    raise ValueError("Groq returned empty content")
+                return json.loads(content)
+            except json.JSONDecodeError as e:
+                last_err = e
+                logger.warning(
+                    f"Groq returned non-JSON (attempt {attempt + 1}): {e}"
+                )
+                continue
+            except Exception as e:
+                last_err = e
+                logger.warning(f"Groq call failed (attempt {attempt + 1}): {e}")
+                continue
+
+        raise RuntimeError(f"Groq failed to produce valid JSON: {last_err}")
+
+
 class OllamaBackend(LLMBackend):
     """Ollama wrapper. Requires the ``ollama`` Python client and an
     Ollama daemon running locally.
+
+    Privacy posture: ``requires_redaction = False`` — all inference is
+    local, so the reasoner can pass the full transcript through.
 
     Model resolution order:
     1. Explicit ``model=`` argument.
@@ -53,6 +169,8 @@ class OllamaBackend(LLMBackend):
     This means the backend never fails just because the tier-recommended
     model hasn't been pulled — it falls back to whatever is on disk.
     """
+
+    provider_name = "Ollama (local)"
 
     # Embedding-only models we should never use for chat / JSON output.
     _EMBEDDING_MODEL_HINTS = ("embed", "embedding", "bge", "nomic-embed")
@@ -218,10 +336,26 @@ def default_backend() -> LLMBackend:
     """Return a sensible default backend.
 
     Resolution order:
-    1. ``CAPSTONE_LLM_BACKEND`` env var ("ollama" supported; "mlx" planned).
-    2. Ollama if importable.
+
+    1. Explicit ``CAPSTONE_LLM_BACKEND`` env var ("ollama" or "groq").
+    2. If ``GROQ_API_KEY`` is set, prefer Groq (we're probably deployed
+       to a public website).
+    3. Otherwise Ollama (we're running locally on a developer machine).
     """
-    backend_name = os.environ.get("CAPSTONE_LLM_BACKEND", "ollama").lower()
-    if backend_name in ("ollama", "default"):
+    explicit = os.environ.get("CAPSTONE_LLM_BACKEND", "").lower()
+    if explicit == "groq":
+        return GroqBackend()
+    if explicit in ("ollama", "default"):
         return OllamaBackend()
-    raise RuntimeError(f"Unknown LLM backend: {backend_name}")
+    if explicit:
+        raise RuntimeError(f"Unknown LLM backend: {explicit!r}")
+
+    # Auto: if a Groq key is set, use it. This is how the website
+    # deployment selects the hosted backend without code changes.
+    if os.environ.get("GROQ_API_KEY"):
+        try:
+            return GroqBackend()
+        except Exception as e:
+            logger.warning(f"GroqBackend init failed, falling back to Ollama: {e}")
+
+    return OllamaBackend()

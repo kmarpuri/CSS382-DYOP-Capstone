@@ -33,7 +33,15 @@ class DatabaseConfig:
     path: str = "project"
 
     def resolve_path(self, project_root: Path) -> Path:
-        """Return the absolute path to the SQLite database file."""
+        """Return the absolute path to the SQLite database file.
+
+        The ``CAPSTONE_DB`` environment variable takes precedence over the
+        YAML setting — Docker containers use it to point at a mounted
+        volume so the catalog survives container rebuilds.
+        """
+        env_override = os.environ.get("CAPSTONE_DB")
+        if env_override:
+            return Path(env_override).expanduser()
         if self.path == "project":
             return project_root / "capstone.db"
         return Path(self.path).expanduser()

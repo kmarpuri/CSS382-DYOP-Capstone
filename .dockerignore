@@ -1,0 +1,40 @@
+# VCS
+.git
+.gitignore
+
+# Local venvs and caches
+.venv
+**/__pycache__
+**/*.pyc
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Local data we don't want baked into the image
+capstone.db
+capstone.db-journal
+capstone.db-wal
+capstone.db-shm
+*.gpickle
+
+# User PDFs — never bake transcripts into the image
+*.pdf
+!tests/**/*.pdf
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Build artifacts
+build
+dist
+
+# Claude worktree (this is what we're running from)
+.claude
+
+# Docker artifacts themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml

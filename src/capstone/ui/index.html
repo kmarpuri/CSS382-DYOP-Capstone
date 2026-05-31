@@ -4,115 +4,727 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Capstone — UW Bothell Course Advisor</title>
+<link rel="preconnect" href="https://rsms.me/" />
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
 <style>
+  /* ── Light mode = warm sepia (parchment) ──────────────────── */
   :root {
-    --bg: #fafafa;
-    --fg: #111;
-    --muted: #666;
-    --accent: #4b2e83;     /* UW purple */
-    --accent-light: #b7a57a;  /* UW gold */
-    --border: #ddd;
-    --good: #2e7d32;
-    --warn: #b26a00;
-    --bad:  #b00020;
-    --card: #fff;
+    --bg: #f1e7d0;                /* parchment / aged paper */
+    --surface: #faf2dc;            /* slightly lighter card */
+    --surface-2: #ebdec0;          /* recessed surface */
+    --fg: #3a2c1a;                 /* dark sepia text */
+    --fg-soft: #5b4527;
+    --muted: #8a7551;
+    --border: #d4c39a;
+    --border-soft: #e3d4ab;
+    --accent: #6b4226;             /* warm brown accent */
+    --accent-hover: #7d4d2d;
+    --accent-soft: #e8d8b8;
+    --gold: #a87d3b;
+    --gold-soft: #f2e2b8;
+    --good: #5c7a2c;
+    --good-soft: #e2eecb;
+    --warn: #8a5a1a;
+    --warn-soft: #f5e5c6;
+    --bad: #8b2c20;
+    --bad-soft: #f3d5ce;
+    --header-gradient: linear-gradient(135deg, #4b2e83 0%, #6b3fb5 40%, #8b5cf6 100%);
+    --shadow-sm: 0 1px 2px rgba(58, 44, 26, 0.06), 0 1px 3px rgba(58, 44, 26, 0.04);
+    --shadow-md: 0 4px 12px rgba(58, 44, 26, 0.08), 0 2px 4px rgba(58, 44, 26, 0.05);
+    --shadow-lg: 0 16px 32px rgba(58, 44, 26, 0.12), 0 4px 8px rgba(58, 44, 26, 0.06);
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --transition: 150ms cubic-bezier(.4, 0, .2, 1);
   }
+
+  /* ── Dark mode = GitHub black ─────────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #21262d;
+      --fg: #e6edf3;
+      --fg-soft: #c9d1d9;
+      --muted: #7d8590;
+      --border: #30363d;
+      --border-soft: #21262d;
+      --accent: #a371f7;             /* GitHub purple */
+      --accent-hover: #b388ff;
+      --accent-soft: #221b3a;
+      --gold: #d29922;
+      --gold-soft: #3a2c0a;
+      --good: #3fb950;
+      --good-soft: #0f2f1a;
+      --warn: #d29922;
+      --warn-soft: #3a2c0a;
+      --bad: #f85149;
+      --bad-soft: #3a1517;
+      --header-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #21262d;
+    --fg: #e6edf3;
+    --fg-soft: #c9d1d9;
+    --muted: #7d8590;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --accent: #a371f7;
+    --accent-hover: #b388ff;
+    --accent-soft: #221b3a;
+    --gold: #d29922;
+    --gold-soft: #3a2c0a;
+    --good: #3fb950;
+    --good-soft: #0f2f1a;
+    --warn: #d29922;
+    --warn-soft: #3a2c0a;
+    --bad: #f85149;
+    --bad-soft: #3a1517;
+    --header-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
+  }
+
   * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
   body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "cv11", "ss01", "ss02";
     background: var(--bg);
     color: var(--fg);
-    line-height: 1.45;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
   }
-  header {
-    background: var(--accent);
+  @supports (font-variation-settings: normal) {
+    body { font-family: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  header.hero {
+    background: var(--header-gradient);
     color: #fff;
-    padding: 1rem 1.5rem;
+    padding: 1.4rem 2rem;
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--border);
+  }
+  header.hero .inner {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
   }
-  header h1 { margin: 0; font-size: 1.25rem; }
-  header .privacy {
-    background: rgba(255,255,255,.15);
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
+  header.hero h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
   }
-  main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
+  header.hero h1 .logo {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,.18);
     border-radius: 8px;
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+  header.hero h1 .subtitle {
+    font-weight: 400;
+    font-size: .85rem;
+    opacity: .7;
+    margin-left: .3rem;
+    color: rgba(255,255,255,.78);
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .privacy-pill {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(4px);
+  }
+  .privacy-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #6ee7b7;
+    box-shadow: 0 0 6px #6ee7b7;
+  }
+  .privacy-pill.hosted {
+    background: rgba(252, 211, 77, 0.25);
+    border-color: rgba(252, 211, 77, 0.4);
+  }
+  .privacy-pill.hosted .dot {
+    background: #fcd34d;
+    box-shadow: 0 0 6px #fcd34d;
+  }
+  .hosted-banner {
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+    border-radius: var(--radius);
+    padding: .85rem 1rem;
+    margin-bottom: 1rem;
+    font-size: .87rem;
+    color: var(--fg);
+    display: flex;
+    gap: .65rem;
+    align-items: flex-start;
+  }
+  .hosted-banner strong { color: var(--warn); }
+  .theme-toggle {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.18);
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition);
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,.22); }
+
+  main {
+    max-width: 1200px;
+    margin: 1.5rem auto 4rem;
+    padding: 0 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: minmax(0, 1fr) 280px; }
+    .layout > aside { position: sticky; top: 100px; }
+  }
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+
+  /* ── Stepper ────────────────────────────────────────────────── */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: .25rem;
+  }
+  .stepper .step {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .stepper .step .num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem;
+    font-weight: 600;
+    transition: background var(--transition), color var(--transition);
+  }
+  .stepper .step.active { color: var(--fg); }
+  .stepper .step.active .num {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .stepper .step.done .num {
+    background: var(--good);
+    color: #fff;
+  }
+  .stepper .step.done .num::after { content: "✓"; }
+  .stepper .step.done .num > span { display: none; }
+  .stepper .divider {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    margin: 0 .85rem;
+    border-radius: 1px;
+  }
+  .stepper .step.done + .divider { background: var(--good); }
+
+  /* ── Cards ──────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.5rem;
+    box-shadow: var(--shadow-sm);
   }
   .card h2 {
-    margin: 0 0 .75rem;
-    font-size: 1.1rem;
-    border-bottom: 2px solid var(--accent-light);
-    padding-bottom: .25rem;
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
   }
-  .row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
-  label { font-size: .85rem; color: var(--muted); display: block; margin-bottom: 2px; }
-  input[type=file], input[type=number], select {
-    padding: .4rem .5rem;
+  .card h2 .step-num {
+    width: 24px; height: 24px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 6px;
+    font-size: .78rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card .desc {
+    color: var(--muted);
+    font-size: .88rem;
+    margin: -.5rem 0 1rem;
+  }
+
+  /* ── Drop zone ──────────────────────────────────────────────── */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    background: var(--surface-2);
+    transition: border-color var(--transition), background var(--transition);
+    position: relative;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .dropzone .icon {
+    width: 48px; height: 48px;
+    margin: 0 auto .75rem;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dropzone .icon svg { width: 24px; height: 24px; }
+  .dropzone strong { font-size: 1rem; color: var(--fg); display: block; margin-bottom: .25rem; }
+  .dropzone .hint { color: var(--muted); font-size: .85rem; }
+  .dropzone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .file-row {
+    margin-top: .85rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft);
+    font-size: .9rem;
+  }
+  .file-row .name { flex: 1; font-weight: 500; }
+  .file-row .size { color: var(--muted); font-size: .82rem; }
+
+  /* ── Forms ──────────────────────────────────────────────────── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+  }
+  .field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; grid-column: span 12; }
+  /* 1-column phone, then 2 / 3 / 4-cell layouts above breakpoints */
+  @media (min-width: 560px) {
+    .field { grid-column: span 6; }
+    .field.wide { grid-column: span 12; }
+  }
+  @media (min-width: 800px) {
+    .field { grid-column: span 3; }
+    .field.wide { grid-column: span 6; }   /* Major gets 2 cells */
+  }
+  .field label {
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--fg-soft);
+    letter-spacing: -.005em;
+  }
+  .field .hint { color: var(--muted); font-size: .75rem; }
+  input[type=number], select, input[type=text] {
+    width: 100%;
+    padding: .55rem .75rem;
     font: inherit;
+    font-size: .92rem;
     border: 1px solid var(--border);
-    border-radius: 4px;
-    background: #fff;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--fg);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    text-overflow: ellipsis;
   }
-  button {
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%238a7551' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    padding-right: 2rem;
+  }
+  :root[data-theme="dark"] select,
+  :root[data-theme="auto"] select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%237d8590' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+  }
+
+  /* Pill-toggle group for quarter selection */
+  .pill-group {
+    display: flex;
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 2px;
+  }
+  .pill-group button {
+    flex: 1 1 0;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    padding: .4rem .3rem;
+    font: inherit;
+    font-size: .85rem;
+    color: var(--fg-soft);
+    cursor: pointer;
+    border-radius: 5px;
+    text-align: center;
+    white-space: nowrap;
+    transition: background var(--transition), color var(--transition);
+    font-weight: 500;
+  }
+  .pill-group button.active {
+    background: var(--surface);
+    color: var(--fg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  button.btn {
     background: var(--accent);
     color: #fff;
     border: 0;
-    padding: .55rem 1rem;
+    padding: .65rem 1.25rem;
     font: inherit;
+    font-size: .92rem;
     font-weight: 600;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    letter-spacing: -.005em;
   }
-  button:disabled { opacity: .5; cursor: not-allowed; }
-  button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  th, td { padding: 6px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid #eee; }
-  th { background: #f3f0f8; font-weight: 600; }
-  tr.in-plan { background: #f3fbe9; }
-  .pill {
-    display: inline-block;
-    padding: 1px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    background: #eee;
-    color: #444;
-    margin-right: 4px;
+  button.btn:hover:not(:disabled) { background: var(--accent-hover); }
+  button.btn:active:not(:disabled) { transform: translateY(1px); }
+  button.btn:disabled { opacity: .5; cursor: not-allowed; }
+  button.btn.secondary {
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--border);
   }
-  .pill.good { background: #e7f5e7; color: var(--good); }
-  .pill.warn { background: #fef0d4; color: var(--warn); }
-  .pill.bad  { background: #fce4e7; color: var(--bad); }
-  .meta { font-size: 0.85rem; color: var(--muted); margin-top: .25rem; }
-  .warnings { color: var(--warn); }
-  .warnings li { margin-bottom: 2px; }
-  pre.json {
-    background: #1d1d22;
-    color: #eee;
-    padding: 12px;
-    border-radius: 6px;
-    overflow: auto;
-    max-height: 350px;
-    font-size: 0.78rem;
+  button.btn.secondary:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--accent);
   }
-  details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-  .small { font-size: .82rem; }
-  .reasoning { color: #333; font-size: .82rem; max-width: 28em; }
-  .center { text-align: center; }
-  .status {
-    margin-left: .75rem;
+  button.btn.ghost {
+    background: transparent;
+    color: var(--fg-soft);
+    padding: .4rem .8rem;
     font-size: .85rem;
+    font-weight: 500;
+  }
+  button.btn.ghost:hover:not(:disabled) { background: var(--surface-2); }
+  button.btn.full { width: 100%; justify-content: center; }
+  button.btn.large { padding: .85rem 1.5rem; font-size: 1rem; }
+
+  /* ── Status & pills ─────────────────────────────────────────── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    background: var(--surface-2);
+    color: var(--fg-soft);
+    letter-spacing: -.005em;
+  }
+  .pill.good { background: var(--good-soft); color: var(--good); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.gold { background: var(--gold-soft); color: var(--gold); }
+  .pill.purple { background: var(--accent-soft); color: var(--accent); }
+
+  /* ── Recommendation cards ──────────────────────────────────── */
+  #recsArea { margin-top: 1rem; }
+  .rec-list {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+  .rec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 1rem;
+    align-items: start;
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+  }
+  .rec-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+  }
+  .rec-card.in-plan {
+    border-color: var(--good);
+    background: linear-gradient(to right, var(--good-soft) 0%, var(--surface) 8%);
+  }
+  .rec-card .rank {
+    width: 40px; height: 40px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rec-card.in-plan .rank { background: var(--good-soft); color: var(--good); }
+  .rec-card .body { min-width: 0; }
+  .rec-card .top-row {
+    display: flex;
+    align-items: baseline;
+    gap: .65rem;
+    flex-wrap: wrap;
+    margin-bottom: .25rem;
+  }
+  .rec-card .course-id {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -.005em;
+  }
+  .rec-card .title {
+    color: var(--fg-soft);
+    font-size: .92rem;
+  }
+  .rec-card .meta-row {
+    display: flex;
+    gap: .35rem;
+    margin: .3rem 0;
+    flex-wrap: wrap;
+  }
+  .rec-card .reasoning {
+    color: var(--fg-soft);
+    font-size: .85rem;
+    margin-top: .5rem;
+    line-height: 1.5;
+    padding: .55rem .75rem;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent);
+  }
+  .rec-card .scores {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 140px;
+    text-align: right;
+  }
+  .rec-card .scores .total {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: .25rem;
+  }
+  .rec-card .scores .total .max {
+    font-size: .75rem;
     color: var(--muted);
+    font-weight: 500;
+  }
+  .rec-card .scores .bar-row {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .72rem;
+    color: var(--muted);
+    justify-content: flex-end;
+  }
+  .rec-card .scores .label-cell { min-width: 38px; text-align: right; }
+  .rec-card .scores .bar {
+    width: 60px;
+    height: 4px;
+    background: var(--border-soft);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .rec-card .scores .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 400ms ease;
+  }
+  .rec-card .scores .bar-fill.gold { background: var(--gold); }
+  .rec-card .scores .bar-fill.good { background: var(--good); }
+  .rec-card .scores .bar-fill.warn { background: var(--warn); }
+
+  @media (max-width: 700px) {
+    .rec-card {
+      grid-template-columns: 40px 1fr;
+    }
+    .rec-card .scores {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      text-align: left;
+      justify-content: flex-start;
+      gap: .75rem;
+      padding-top: .5rem;
+      border-top: 1px solid var(--border-soft);
+      min-width: 0;
+    }
+    .rec-card .scores .total { font-size: 1.1rem; }
+    .rec-card .scores .bar-row { font-size: .7rem; }
+  }
+
+  /* ── Summary sidebar ────────────────────────────────────────── */
+  aside .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+  }
+  aside .summary-card h3 {
+    margin: 0 0 .75rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  aside .stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: .88rem;
+  }
+  aside .stat:last-child { border-bottom: 0; }
+  aside .stat .k { color: var(--fg-soft); }
+  aside .stat .v { font-weight: 600; color: var(--fg); }
+  aside .credit-meter {
+    margin-top: .75rem;
+    padding: .75rem;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+  }
+  aside .credit-meter .bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: .35rem;
+  }
+  aside .credit-meter .bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--accent), var(--gold));
+    border-radius: 4px;
+    transition: width 400ms ease;
+  }
+  aside .credit-meter .labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: .25rem;
+  }
+  aside + p { display: none; }
+
+  /* ── Loading / skeleton ─────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg,
+      var(--surface-2) 0%,
+      var(--border-soft) 50%,
+      var(--surface-2) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skel-card {
+    height: 100px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 1rem;
   }
   .spinner {
     display: inline-block;
@@ -120,103 +732,392 @@
     border: 2px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 800ms linear infinite;
     vertical-align: middle;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Warnings/empty ─────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--muted);
+  }
+  .empty-state .icon {
+    width: 64px; height: 64px;
+    margin: 0 auto 1rem;
+    border-radius: 16px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+  }
+  .empty-state h3 { color: var(--fg); margin: 0 0 .35rem; font-size: 1rem; font-weight: 600; }
+  .warnings-box {
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+  }
+  .warnings-box h3 {
+    margin: 0 0 .5rem;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--warn);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .warnings-box ul { margin: 0; padding-left: 1.25rem; color: var(--fg); font-size: .87rem; line-height: 1.5; }
+  .warnings-box li { margin-bottom: .25rem; }
+
+  /* ── Banner ─────────────────────────────────────────────────── */
+  .banner {
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+    color: var(--fg);
+    padding: .8rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: .88rem;
+    margin: 0 0 1rem;
+    display: flex;
+    gap: .65rem;
+    align-items: flex-start;
+  }
+  .banner code {
+    background: var(--surface);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: .82em;
+    border: 1px solid var(--border-soft);
+  }
+
+  /* ── Misc ───────────────────────────────────────────────────── */
+  .row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+  .between { justify-content: space-between; }
+  .status-line { color: var(--muted); font-size: .85rem; min-height: 1.2em; }
+  .status-line .err { color: var(--bad); }
+  .status-line .ok { color: var(--good); font-weight: 500; }
+
+  details summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 500;
+    font-size: .88rem;
+    user-select: none;
+  }
+  details summary:hover { text-decoration: underline; }
+  details[open] summary { margin-bottom: .75rem; }
+
+  pre.json {
+    background: #1a1525;
+    color: #ede9f5;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    overflow: auto;
+    max-height: 380px;
+    font-size: 0.78rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    border: 1px solid var(--border);
+    line-height: 1.5;
+  }
+
+  .view-toggle {
+    display: inline-flex;
+    gap: 2px;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    border: 1px solid var(--border);
+  }
+  .view-toggle button {
+    background: transparent;
+    border: 0;
+    padding: .3rem .7rem;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--fg-soft);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .view-toggle button.active {
+    background: var(--surface);
+    color: var(--fg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Dense table view */
+  table.recs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .87rem;
+    margin-top: 1rem;
+  }
+  table.recs-table th, table.recs-table td {
+    padding: .55rem .75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+  }
+  table.recs-table th {
+    background: var(--surface-2);
+    font-weight: 600;
+    font-size: .78rem;
+    color: var(--fg-soft);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  table.recs-table tr.in-plan {
+    background: var(--good-soft);
+  }
+  table.recs-table .reasoning {
+    color: var(--fg-soft);
+    font-size: .82rem;
+    max-width: 24em;
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Capstone — UW Bothell Course Advisor</h1>
-  <span class="privacy">🔒 Local-only · no data leaves this machine</span>
+<header class="hero">
+  <div class="inner">
+    <h1>
+      <span class="logo">🎓</span>
+      Capstone
+      <span class="subtitle">UW Bothell Course Advisor</span>
+    </h1>
+    <div class="header-actions">
+      <span class="privacy-pill" id="privacyPill" title="Checking backend…">
+        <span class="dot"></span> <span id="privacyPillText">Loading…</span>
+      </span>
+      <button id="themeToggle" class="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 </header>
 
 <main>
-  <!-- 1. Transcript upload -->
-  <section class="card">
-    <h2>1. Upload your UW transcript (PDF)</h2>
-    <div class="row">
-      <input type="file" id="pdfInput" accept="application/pdf" />
-      <button id="parseBtn" disabled>Parse transcript</button>
-      <span id="parseStatus" class="status"></span>
+  <!-- Stepper -->
+  <nav class="stepper" id="stepper" aria-label="Progress">
+    <div class="step active" data-step="1"><span class="num"><span>1</span></span> Upload transcript</div>
+    <div class="divider"></div>
+    <div class="step" data-step="2"><span class="num"><span>2</span></span> Set preferences</div>
+    <div class="divider"></div>
+    <div class="step" data-step="3"><span class="num"><span>3</span></span> Review plan</div>
+  </nav>
+
+  <div class="layout">
+  <div class="content">
+
+  <!-- Privacy banner — only shown when running with a hosted backend -->
+  <div id="hostedBanner" class="hosted-banner" hidden>
+    <span>🌐</span>
+    <div>
+      <strong>Hosted reasoning is active.</strong>
+      When you click <em>Generate plan</em>, your <em>redacted</em> course
+      history (no name, no student ID) is sent to
+      <span id="hostedProvider">a third-party LLM</span>
+      to produce reasoning text. Catalog data and transcript parsing stay
+      on this server. To keep everything local, install and run Capstone
+      on your laptop instead.
     </div>
-    <p class="meta">
-      Your transcript stays on this device. It is never uploaded anywhere
-      except the local FastAPI server on <code>127.0.0.1</code>.
+  </div>
+
+  <!-- 1. Upload -->
+  <section class="card" id="card-upload">
+    <h2><span class="step-num">1</span> Upload your UW transcript</h2>
+    <p class="desc">
+      Drop in your unofficial UW transcript PDF. Parsing happens locally — your transcript
+      never leaves <code>127.0.0.1</code>.
     </p>
-    <div id="transcriptSummary" class="meta" hidden></div>
+
+    <div class="dropzone" id="dropzone">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <strong>Click to upload</strong> or drag and drop
+      <div class="hint">PDF files only · usually called <code>UWUnofficialTranscript.pdf</code></div>
+      <input type="file" id="pdfInput" accept="application/pdf" />
+    </div>
+
+    <div id="fileRow" class="file-row" hidden>
+      <span style="font-size: 1.2rem;">📄</span>
+      <span class="name" id="fileName">—</span>
+      <span class="size" id="fileSize"></span>
+      <button id="parseBtn" class="btn" disabled>Parse</button>
+    </div>
+
+    <div id="parseStatus" class="status-line" style="margin-top: .5rem;"></div>
+
+    <div id="transcriptSummary" hidden style="margin-top: 1rem;
+          padding: .85rem 1rem; background: var(--good-soft);
+          border-radius: var(--radius-sm); font-size: .9rem;
+          border: 1px solid color-mix(in srgb, var(--good) 25%, transparent);">
+    </div>
   </section>
 
   <!-- 2. Preferences -->
-  <section class="card">
-    <h2>2. Your preferences</h2>
-    <div class="row">
-      <div>
+  <section class="card" id="card-prefs">
+    <h2><span class="step-num">2</span> Your preferences</h2>
+    <p class="desc">Tune the plan to your major, target quarter, and credit appetite.</p>
+
+    <div class="form-grid">
+      <div class="field wide">
         <label for="major">Major</label>
         <select id="major">
-          <option value="CSSE" selected>CSSE — Computer Science & Software Engineering</option>
-          <option value="OTHER" disabled>Other majors — Phase 5 (not yet implemented)</option>
+          <option value="" disabled selected>Loading majors…</option>
         </select>
       </div>
-      <div>
+
+      <div class="field">
         <label for="quarter">Target quarter</label>
-        <select id="quarter">
-          <option value="AUT" selected>Autumn</option>
-          <option value="WIN">Winter</option>
-          <option value="SPR">Spring</option>
-          <option value="SUM">Summer</option>
-        </select>
+        <div class="pill-group" id="quarterPills" role="group" aria-label="Target quarter">
+          <button type="button" data-q="AUT" class="active">Aut</button>
+          <button type="button" data-q="WIN">Win</button>
+          <button type="button" data-q="SPR">Spr</button>
+          <button type="button" data-q="SUM">Sum</button>
+        </div>
+        <input type="hidden" id="quarter" value="AUT" />
       </div>
-      <div>
-        <label for="creditLoad">Desired credit load</label>
+
+      <div class="field">
+        <label for="creditLoad">Credit load</label>
         <input type="number" id="creditLoad" value="15" min="3" max="25" step="1" />
+        <span class="hint">3–25 credits · default 15</span>
       </div>
-      <div>
+
+      <div class="field">
         <label for="topN">Show top N</label>
         <input type="number" id="topN" value="10" min="3" max="30" step="1" />
+        <span class="hint">3–30 candidates</span>
       </div>
-      <div>
-        <label for="useLlm">LLM reasoning</label>
+
+      <div class="field wide">
+        <label for="useLlm">Reasoning</label>
         <select id="useLlm">
-          <option value="false" selected>Rule-based only (fast)</option>
-          <option value="true">Use local LLM (slower, adds reasoning)</option>
+          <option value="false" selected>Rule-based (fast)</option>
+          <option value="true">LLM-reranked (slower, adds reasoning)</option>
         </select>
       </div>
+    </div>
+
+    <div class="field" style="margin-top: 1rem;">
+      <label for="userPrompt">
+        Anything else? <span style="color: var(--muted); font-weight: 400;">
+          (preferred days/times, learning style, scheduling constraints — used only when LLM reasoning is on)
+        </span>
+      </label>
+      <textarea id="userPrompt"
+        rows="3"
+        maxlength="2000"
+        placeholder='e.g. "I prefer morning classes before noon. No Fridays. I learn better in project-heavy courses."'
+        style="width: 100%; padding: .55rem .75rem; font: inherit; font-size: .92rem;
+               border: 1px solid var(--border); border-radius: var(--radius-sm);
+               background: var(--surface); color: var(--fg); resize: vertical;
+               line-height: 1.5;"
+      ></textarea>
     </div>
   </section>
 
   <!-- 3. Recommendations -->
-  <section class="card">
-    <div class="row" style="justify-content: space-between;">
-      <h2 style="border: 0; margin: 0;">3. Recommendations</h2>
-      <button id="recommendBtn" disabled>Generate plan</button>
+  <section class="card" id="card-recs">
+    <div class="row between" style="margin-bottom: .25rem;">
+      <h2 style="margin: 0;"><span class="step-num">3</span> Recommendations</h2>
+      <div class="row" style="gap: .5rem;">
+        <div class="view-toggle" id="viewToggle" role="group" aria-label="View mode">
+          <button type="button" data-view="cards" class="active">Cards</button>
+          <button type="button" data-view="table">Table</button>
+        </div>
+        <button id="recommendBtn" class="btn" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          Generate plan
+        </button>
+      </div>
     </div>
-    <div id="recStatus" class="status"></div>
-    <div id="warningsBox" hidden>
-      <h3 style="margin-top: 1rem; font-size: .95rem; color: var(--warn);">Warnings</h3>
-      <ul class="warnings" id="warnings"></ul>
+    <div id="recStatus" class="status-line"></div>
+
+    <div id="warningsBox" class="warnings-box" hidden>
+      <h3>⚠️ Heads up</h3>
+      <ul id="warnings"></ul>
     </div>
-    <div id="planSummary" class="meta" hidden></div>
-    <table id="recsTable" hidden>
-      <thead>
-        <tr>
-          <th>#</th><th>Course</th><th>Title</th><th>Cr</th>
-          <th>Score</th><th>Crit</th><th>Prog</th><th>Avail</th>
-          <th>In plan</th><th>Reasoning</th>
-        </tr>
-      </thead>
-      <tbody id="recsBody"></tbody>
-    </table>
+
+    <div id="recsArea">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">📚</div>
+        <h3>No plan yet</h3>
+        <p>Upload a transcript and click <strong>Generate plan</strong>.</p>
+      </div>
+      <div class="rec-list" id="recsList" hidden></div>
+      <table class="recs-table" id="recsTable" hidden>
+        <thead>
+          <tr>
+            <th>#</th><th>Course</th><th>Title</th><th>Cr</th>
+            <th>Score</th><th>Crit</th><th>Prog</th><th>Avail</th><th>Syn</th>
+            <th>In plan</th><th>Reasoning</th>
+          </tr>
+        </thead>
+        <tbody id="recsBody"></tbody>
+      </table>
+    </div>
   </section>
 
-  <!-- 4. Parsed transcript JSON (debug) -->
+  <!-- 4. Debug -->
   <section class="card">
     <details>
       <summary>Parsed transcript JSON (debug)</summary>
       <pre class="json" id="transcriptJson">— upload a transcript above —</pre>
     </details>
   </section>
+
+  </div><!-- /.content -->
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="summary-card">
+      <h3>Plan summary</h3>
+      <div id="planStats">
+        <div class="stat"><span class="k">Status</span><span class="v" id="statStatus">Not generated</span></div>
+        <div class="stat"><span class="k">Major</span><span class="v" id="statMajor">—</span></div>
+        <div class="stat"><span class="k">Quarter</span><span class="v" id="statQuarter">—</span></div>
+        <div class="stat"><span class="k">Credits</span><span class="v" id="statCredits">—</span></div>
+        <div class="stat"><span class="k">In plan</span><span class="v" id="statInPlan">—</span></div>
+        <div class="stat"><span class="k">Reasoning</span><span class="v" id="statLLM">—</span></div>
+      </div>
+      <div class="credit-meter" id="creditMeter" hidden>
+        <div class="row between" style="font-size: .82rem;">
+          <span style="color: var(--muted);">Target</span>
+          <strong id="creditMeterValue">15 / 15</strong>
+        </div>
+        <div class="bar"><div class="bar-fill" id="creditMeterFill" style="width: 0%;"></div></div>
+        <div class="labels"><span>0</span><span>25</span></div>
+      </div>
+    </div>
+
+    <div class="summary-card" style="margin-top: 1rem;">
+      <h3>Backend</h3>
+      <div class="stat"><span class="k">Catalog</span><span class="v" id="dbStatus">Checking…</span></div>
+      <div class="stat"><span class="k">Ollama</span><span class="v" id="ollamaStatus">Checking…</span></div>
+      <div class="stat"><span class="k">Model</span><span class="v" id="modelStatus">—</span></div>
+    </div>
+  </aside>
+  </div><!-- /.layout -->
 </main>
 
 <script>
@@ -224,22 +1125,34 @@
 
 const $ = (id) => document.getElementById(id);
 let parsedTranscript = null;
+let lastResult = null;
+let currentView = "cards";
 
-// Detect when the page is being viewed without a real HTTP origin
-// (file://, about:blank, or a sandboxed preview). Relative fetches
-// don't work there — surface a clear message instead of the cryptic
-// "Failed to parse URL from /api/...".
+// ── Theme toggle ──────────────────────────────────────────────
+(function initTheme() {
+  const saved = localStorage.getItem("capstone-theme") || "auto";
+  document.documentElement.setAttribute("data-theme", saved);
+  $("themeToggle").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "auto";
+    const next = cur === "dark" ? "light" : (cur === "light" ? "auto" : "dark");
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("capstone-theme", next);
+  });
+})();
+
+// ── Backend origin detection ──────────────────────────────────
 const SERVED_BY_API = ["http:", "https:"].includes(window.location.protocol)
   && window.location.host;
 
 if (!SERVED_BY_API) {
-  document.body.insertAdjacentHTML("afterbegin", `
-    <div style="background:#fef0d4;border-bottom:1px solid #b26a00;
-                color:#7a4500;padding:.6rem 1rem;font-size:.9rem;">
-      ⚠️ This page isn't being served by the Capstone FastAPI backend.
-      Relative API calls won't work here. Start the server in a terminal:
-      <code style="background:#fff;padding:0 4px;border-radius:3px;">capstone serve</code>
-      and open <code style="background:#fff;padding:0 4px;border-radius:3px;">http://127.0.0.1:8765</code>.
+  document.querySelector("main").insertAdjacentHTML("afterbegin", `
+    <div class="full banner">
+      <span>⚠️</span>
+      <div>
+        This page isn't being served by the Capstone backend.
+        Run <code>capstone serve</code> in a terminal and open
+        <code>http://127.0.0.1:8765</code>.
+      </div>
     </div>
   `);
 }
@@ -253,111 +1166,280 @@ function apiFetch(path, options) {
   return fetch(path, options);
 }
 
-$("pdfInput").addEventListener("change", () => {
-  $("parseBtn").disabled = !$("pdfInput").files?.length;
+// ── Health-line sidebar fetch ─────────────────────────────────
+async function refreshBackendStatus() {
+  if (!SERVED_BY_API) {
+    $("dbStatus").textContent = "Offline";
+    $("ollamaStatus").textContent = "Offline";
+    return;
+  }
+  try {
+    const [healthR, llmR] = await Promise.all([
+      fetch("/api/health"),
+      fetch("/api/llm-status"),
+    ]);
+    const health = await healthR.json();
+    const llm = await llmR.json();
+    $("dbStatus").innerHTML = health.db_exists
+      ? '<span class="pill good">Ready</span>'
+      : '<span class="pill warn">Run scrape</span>';
+    $("ollamaStatus").innerHTML = llm.ollama_running
+      ? '<span class="pill good">Running</span>'
+      : '<span class="pill warn">Offline</span>';
+    if (llm.installed_models && llm.installed_models.length) {
+      $("modelStatus").textContent = llm.installed_models[0];
+    } else {
+      $("modelStatus").innerHTML = '<span class="pill bad">none</span>';
+    }
+
+    // Privacy posture
+    const pill = $("privacyPill");
+    const pillText = $("privacyPillText");
+    const banner = $("hostedBanner");
+    if (llm.requires_redaction) {
+      pill.classList.add("hosted");
+      pill.title = `Reasoning by ${llm.active_provider_name} — PII redacted before send`;
+      pillText.textContent = "Hosted reasoning";
+      banner.hidden = false;
+      $("hostedProvider").textContent =
+        `${llm.active_provider_name} (${llm.active_model})`;
+      // Override the model sidebar entry to show the hosted model
+      $("modelStatus").textContent = llm.active_model;
+    } else {
+      pill.classList.remove("hosted");
+      pill.title = "All inference is on this machine";
+      pillText.textContent = "Local-only";
+      banner.hidden = true;
+    }
+  } catch (e) {
+    $("dbStatus").textContent = "—";
+    $("ollamaStatus").textContent = "—";
+  }
+}
+refreshBackendStatus();
+
+// ── Majors dropdown ───────────────────────────────────────────
+async function populateMajors() {
+  const sel = $("major");
+  if (!SERVED_BY_API) {
+    sel.innerHTML = '<option value="CSSE" selected>CSSE — Computer Science & Software Engineering</option>';
+    return;
+  }
+  try {
+    const r = await fetch("/api/majors");
+    const majors = await r.json();
+    sel.innerHTML = majors.map(
+      (m) => `<option value="${m.code}">${m.code} — ${m.name}</option>`
+    ).join("");
+    if ([...sel.options].some((o) => o.value === "CSSE")) sel.value = "CSSE";
+  } catch (e) {
+    sel.innerHTML = '<option value="CSSE" selected>CSSE — Computer Science & Software Engineering</option>';
+  }
+}
+populateMajors();
+
+// ── Stepper ───────────────────────────────────────────────────
+function setStep(n) {
+  document.querySelectorAll(".stepper .step").forEach((el) => {
+    const s = parseInt(el.dataset.step, 10);
+    el.classList.toggle("active", s === n);
+    el.classList.toggle("done", s < n);
+  });
+}
+
+// ── Quarter pill group ────────────────────────────────────────
+$("quarterPills").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-q]");
+  if (!b) return;
+  document.querySelectorAll("#quarterPills button").forEach((x) => x.classList.remove("active"));
+  b.classList.add("active");
+  $("quarter").value = b.dataset.q;
 });
 
+// ── View toggle (cards / table) ───────────────────────────────
+$("viewToggle").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-view]");
+  if (!b) return;
+  document.querySelectorAll("#viewToggle button").forEach((x) => x.classList.remove("active"));
+  b.classList.add("active");
+  currentView = b.dataset.view;
+  if (lastResult) renderResult(lastResult);
+});
+
+// ── Drop zone ─────────────────────────────────────────────────
+const dz = $("dropzone");
+const pdfInput = $("pdfInput");
+
+["dragover", "dragenter"].forEach((ev) => {
+  dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("dragover"); });
+});
+["dragleave", "drop", "dragend"].forEach((ev) => {
+  dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("dragover"); });
+});
+dz.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files?.[0];
+  if (f) {
+    pdfInput.files = e.dataTransfer.files;
+    onFileChosen(f);
+  }
+});
+pdfInput.addEventListener("change", (e) => {
+  if (pdfInput.files?.length) onFileChosen(pdfInput.files[0]);
+});
+
+function onFileChosen(file) {
+  $("fileRow").hidden = false;
+  $("fileName").textContent = file.name;
+  $("fileSize").textContent = formatBytes(file.size);
+  $("parseBtn").disabled = false;
+}
+function formatBytes(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+  return (n / 1024 / 1024).toFixed(1) + " MB";
+}
+
+// ── Parse transcript ──────────────────────────────────────────
 $("parseBtn").addEventListener("click", async () => {
-  const f = $("pdfInput").files[0];
+  const f = pdfInput.files[0];
   if (!f) return;
   const fd = new FormData();
   fd.append("file", f);
-  $("parseStatus").innerHTML = '<span class="spinner"></span> Parsing…';
+  $("parseStatus").innerHTML = '<span class="spinner"></span> Parsing transcript…';
+  $("parseBtn").disabled = true;
   try {
     const r = await apiFetch("/api/parse-transcript", { method: "POST", body: fd });
-    if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.detail || r.statusText);
+    }
     parsedTranscript = await r.json();
     $("transcriptJson").textContent = JSON.stringify(parsedTranscript, null, 2);
     const sum = $("transcriptSummary");
     sum.hidden = false;
     sum.innerHTML = `
-      <strong>${parsedTranscript.student_name ?? "(unknown student)"}</strong>
-      &middot; ${parsedTranscript.major ?? "(no major)"}
-      &middot; ${parsedTranscript.class_standing ?? "?"} standing
-      &middot; ${parsedTranscript.completed.length} completed
-      &middot; ${parsedTranscript.in_progress.length} in-progress
-      &middot; cumulative GPA ${parsedTranscript.cumulative_gpa ?? "?"}
+      <div style="font-weight: 600; margin-bottom: .25rem;">
+        ✓ Parsed: ${escapeHtml(parsedTranscript.student_name ?? "Unknown student")}
+      </div>
+      <div class="row" style="gap: .35rem; font-size: .82rem;">
+        <span class="pill purple">${escapeHtml(parsedTranscript.major ?? "no major")}</span>
+        <span class="pill">${escapeHtml(parsedTranscript.class_standing ?? "?")}</span>
+        <span class="pill">${parsedTranscript.completed.length} completed</span>
+        <span class="pill">${parsedTranscript.in_progress.length} in progress</span>
+        ${parsedTranscript.cumulative_gpa
+          ? `<span class="pill gold">GPA ${parsedTranscript.cumulative_gpa}</span>` : ""}
+      </div>
     `;
     if (parsedTranscript.major) $("major").value = parsedTranscript.major;
-    $("parseStatus").textContent = "✓ Parsed";
+    $("parseStatus").innerHTML = '<span class="ok">✓ Transcript loaded</span>';
     $("recommendBtn").disabled = false;
+    $("statMajor").textContent = parsedTranscript.major ?? "—";
+    setStep(2);
   } catch (e) {
-    $("parseStatus").innerHTML = `<span style="color: var(--bad);">✗ ${e.message}</span>`;
+    $("parseStatus").innerHTML = `<span class="err">✗ ${escapeHtml(e.message)}</span>`;
+    $("parseBtn").disabled = false;
   }
 });
 
+// ── Recommend ─────────────────────────────────────────────────
 $("recommendBtn").addEventListener("click", async () => {
   if (!parsedTranscript) return;
-  $("recStatus").innerHTML = '<span class="spinner"></span> Generating recommendations…';
+
+  const useLlm = $("useLlm").value === "true";
+  $("recStatus").innerHTML = useLlm
+    ? '<span class="spinner"></span> Reasoning with local LLM…'
+    : '<span class="spinner"></span> Computing plan…';
   $("recsTable").hidden = true;
+  $("recsList").hidden = true;
   $("warningsBox").hidden = true;
+  $("emptyState").hidden = true;
+  showSkeleton();
 
   const body = {
     transcript: parsedTranscript,
     target_quarter: $("quarter").value,
     credit_load: parseInt($("creditLoad").value, 10),
     top_n: parseInt($("topN").value, 10),
-    use_llm: $("useLlm").value === "true",
+    use_llm: useLlm,
+    user_prompt: $("userPrompt").value || "",
     major_override: $("major").value,
   };
+
   try {
     const r = await apiFetch("/api/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
-    const result = await r.json();
-    renderResult(result);
-    $("recStatus").textContent = result.used_llm
-      ? "✓ Reranked by local LLM"
-      : "✓ Rule-based (no LLM)";
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.detail || r.statusText);
+    }
+    lastResult = await r.json();
+    hideSkeleton();
+    renderResult(lastResult);
+    $("recStatus").innerHTML = lastResult.used_llm
+      ? '<span class="ok">✓ Reranked by local LLM</span>'
+      : '<span class="ok">✓ Rule-based plan</span>';
+    setStep(3);
   } catch (e) {
-    $("recStatus").innerHTML = `<span style="color: var(--bad);">✗ ${e.message}</span>`;
+    hideSkeleton();
+    $("emptyState").hidden = false;
+    $("recStatus").innerHTML = `<span class="err">✗ ${escapeHtml(e.message)}</span>`;
   }
 });
 
-function renderResult(result) {
-  const tbody = $("recsBody");
-  tbody.innerHTML = "";
-  for (const r of result.recommendations) {
-    const tr = document.createElement("tr");
-    if (r.fits_load) tr.classList.add("in-plan");
-
-    // Soft-prereq pills: green = prep done, yellow = prep missing
-    const softPills = [
-      ...(r.completed_soft_prereqs ?? []).map(
-        (c) => `<span class="pill good" title="Prep done">✓ ${c}</span>`),
-      ...(r.missing_soft_prereqs ?? []).map(
-        (c) => `<span class="pill warn" title="Soft prereq — would make this easier">↑ ${c}</span>`),
-    ].join(" ");
-
-    tr.innerHTML = `
-      <td>${r.rank}</td>
-      <td><strong>${r.course_id}</strong>${softPills ? "<br>" + softPills : ""}</td>
-      <td>${escapeHtml(r.title ?? "")}</td>
-      <td>${r.credit_hours}</td>
-      <td>${r.score.toFixed(2)}</td>
-      <td>${r.criticality_score.toFixed(2)}</td>
-      <td>${r.progress_score.toFixed(2)}</td>
-      <td>${r.availability_score.toFixed(2)}</td>
-      <td>${r.fits_load ? '<span class="pill good">✓ in plan</span>' : ""}</td>
-      <td class="reasoning">${escapeHtml(r.reasoning ?? "")}</td>
+// ── Rendering ─────────────────────────────────────────────────
+function showSkeleton() {
+  let html = "";
+  for (let i = 0; i < 4; i++) {
+    html += `
+      <div class="skel-card">
+        <div class="skeleton" style="width: 40px; height: 40px; border-radius: 10px;"></div>
+        <div>
+          <div class="skeleton" style="height: 16px; width: 30%; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="height: 12px; width: 80%; margin-bottom: 6px;"></div>
+          <div class="skeleton" style="height: 12px; width: 60%;"></div>
+        </div>
+        <div class="skeleton" style="width: 80px; height: 32px;"></div>
+      </div>
     `;
-    tbody.appendChild(tr);
   }
-  $("recsTable").hidden = false;
+  $("recsList").innerHTML = html;
+  $("recsList").hidden = false;
+}
+function hideSkeleton() { $("recsList").innerHTML = ""; }
 
-  const ps = $("planSummary");
-  ps.hidden = false;
-  ps.innerHTML = `Plan total: <strong>${result.total_credits}</strong> credits
-                  (target ${result.target_load} ±2)
-                  · target quarter: ${result.target_quarter ?? "any"}`;
+function renderResult(result) {
+  // Sidebar
+  $("statStatus").innerHTML = '<span class="pill good">Generated</span>';
+  $("statQuarter").textContent = result.target_quarter ?? "any";
+  $("statCredits").innerHTML = `<strong>${result.total_credits}</strong> / ${result.target_load}`;
+  $("statInPlan").textContent = result.recommendations.filter((r) => r.fits_load).length;
+  $("statLLM").innerHTML = result.used_llm
+    ? '<span class="pill purple">LLM</span>'
+    : '<span class="pill">Rules</span>';
+  $("creditMeter").hidden = false;
+  $("creditMeterValue").textContent = `${result.total_credits} / ${result.target_load}`;
+  const pct = Math.min(100, (result.total_credits / 25) * 100);
+  $("creditMeterFill").style.width = pct + "%";
 
+  // Render the chosen view
+  if (currentView === "table") {
+    renderTable(result);
+    $("recsList").hidden = true;
+    $("recsTable").hidden = false;
+  } else {
+    renderCards(result);
+    $("recsTable").hidden = true;
+    $("recsList").hidden = false;
+  }
+
+  // Warnings
   const wb = $("warningsBox");
   const ul = $("warnings");
   ul.innerHTML = "";
-  if (result.warnings && result.warnings.length) {
+  if (result.warnings?.length) {
     for (const w of result.warnings) {
       const li = document.createElement("li");
       li.textContent = w;
@@ -369,8 +1451,106 @@ function renderResult(result) {
   }
 }
 
+function renderCards(result) {
+  const list = $("recsList");
+  list.innerHTML = "";
+  for (const r of result.recommendations) {
+    const card = document.createElement("div");
+    card.className = "rec-card" + (r.fits_load ? " in-plan" : "");
+
+    // Soft-prereq pills
+    const softPills = [
+      ...(r.completed_soft_prereqs ?? []).map(
+        (c) => `<span class="pill good" title="Prep complete">✓ ${escapeHtml(c)}</span>`),
+      ...(r.missing_soft_prereqs ?? []).map(
+        (c) => `<span class="pill warn" title="Soft prereq — would make this easier">↑ ${escapeHtml(c)}</span>`),
+    ].join(" ");
+
+    // Instructor rating badge (from cached RMP data, if any)
+    const profPill = renderInstructorBadge(r.best_instructor);
+
+    card.innerHTML = `
+      <div class="rank">${r.rank}</div>
+      <div class="body">
+        <div class="top-row">
+          <span class="course-id">${escapeHtml(r.course_id)}</span>
+          <span class="title">${escapeHtml(r.title ?? "")}</span>
+          <span class="pill">${r.credit_hours} cr</span>
+          ${r.fits_load ? '<span class="pill good">In plan</span>' : ""}
+          ${profPill}
+        </div>
+        ${softPills ? `<div class="meta-row">${softPills}</div>` : ""}
+        ${r.reasoning ? `<div class="reasoning">${escapeHtml(r.reasoning)}</div>` : ""}
+      </div>
+      <div class="scores">
+        <div class="total">${r.score.toFixed(2)} <span class="max">/ 1.0</span></div>
+        ${scoreBar("Crit", r.criticality_score, "")}
+        ${scoreBar("Prog", r.progress_score, "good")}
+        ${scoreBar("Avail", r.availability_score, "gold")}
+        ${scoreBar("Syn", r.synergy_score ?? 0, "warn")}
+      </div>
+    `;
+    list.appendChild(card);
+  }
+}
+
+function renderInstructorBadge(info) {
+  if (!info || info.avg_rating == null) return "";
+  const rating = Number(info.avg_rating).toFixed(1);
+  const n = info.num_ratings ?? 0;
+  const lowSignal = n < 5;
+  const cls = lowSignal ? "" : (info.avg_rating >= 4 ? "good"
+                                : info.avg_rating >= 3 ? "gold" : "warn");
+  const diff = info.avg_difficulty != null
+    ? ` · diff ${Number(info.avg_difficulty).toFixed(1)}` : "";
+  const title = `${escapeHtml(info.name ?? "instructor")} — ${rating}/5 from ${n} review${n === 1 ? "" : "s"}${diff}`;
+  return `<a class="pill ${cls}" title="${title}" target="_blank" rel="noopener"
+             href="${info.rmp_url || "#"}"
+             style="text-decoration: none;">★ ${rating}${lowSignal ? ` (${n})` : ""}</a>`;
+}
+
+function scoreBar(label, val, cls) {
+  const pct = Math.max(0, Math.min(100, val * 100));
+  return `
+    <div class="bar-row">
+      <span class="label-cell">${label}</span>
+      <div class="bar"><div class="bar-fill ${cls}" style="width: ${pct}%;"></div></div>
+      <span style="font-variant-numeric: tabular-nums;">${val.toFixed(2)}</span>
+    </div>
+  `;
+}
+
+function renderTable(result) {
+  const tbody = $("recsBody");
+  tbody.innerHTML = "";
+  for (const r of result.recommendations) {
+    const tr = document.createElement("tr");
+    if (r.fits_load) tr.classList.add("in-plan");
+    const softPills = [
+      ...(r.completed_soft_prereqs ?? []).map(
+        (c) => `<span class="pill good">✓ ${escapeHtml(c)}</span>`),
+      ...(r.missing_soft_prereqs ?? []).map(
+        (c) => `<span class="pill warn">↑ ${escapeHtml(c)}</span>`),
+    ].join(" ");
+    tr.innerHTML = `
+      <td>${r.rank}</td>
+      <td><strong>${escapeHtml(r.course_id)}</strong>${softPills ? "<br>" + softPills : ""}</td>
+      <td>${escapeHtml(r.title ?? "")}</td>
+      <td>${r.credit_hours}</td>
+      <td><strong>${r.score.toFixed(2)}</strong></td>
+      <td>${r.criticality_score.toFixed(2)}</td>
+      <td>${r.progress_score.toFixed(2)}</td>
+      <td>${r.availability_score.toFixed(2)}</td>
+      <td>${(r.synergy_score ?? 0).toFixed(2)}</td>
+      <td>${r.fits_load ? '<span class="pill good">✓</span>' : ""}</td>
+      <td class="reasoning">${escapeHtml(r.reasoning ?? "")}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
 }

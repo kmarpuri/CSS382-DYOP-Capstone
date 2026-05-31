@@ -7,10 +7,16 @@ POST /api/recommend            — body: parsed Transcript + load + quarter
 GET  /api/courses              — search the catalog
 GET  /api/major-requirements   — list requirements for a major
 GET  /api/hardware             — hardware tier + recommended model
+GET  /api/llm-status           — current LLM backend + privacy posture
 GET  /                         — serves the single-page UI
 
-All routes operate against the local SQLite database. No transcript
-data is ever sent off-device.
+Transcript parsing always runs in this process. Recommendation
+*reasoning* runs in whichever backend the LLM layer is configured for:
+
+  - ``OllamaBackend``  : strictly local, no data leaves the machine
+  - ``GroqBackend``    : sent to Groq's hosted API with PII redacted
+
+The UI surfaces a banner reflecting whichever posture is active.
 """
 
 from __future__ import annotations
@@ -19,6 +25,14 @@ import logging
 import tempfile
 from pathlib import Path
 from typing import Annotated
+
+# Auto-load .env so GROQ_API_KEY etc. are picked up by uvicorn-launched
+# instances (e.g., behind gunicorn on Railway / Fly).
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+except ImportError:
+    pass
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse
@@ -54,6 +68,10 @@ class RecommendRequest(BaseModel):
     top_n: int = Field(default=10, ge=1, le=50)
     use_llm: bool = True
     major_override: str | None = None
+    # Free-form user prompt — e.g. "prefer mornings", "no Fridays",
+    # "I learn better with project-heavy classes". Routed to the LLM
+    # reasoner as a `user_constraints` block; ignored when use_llm=False.
+    user_prompt: str = Field(default="", max_length=2000)
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────
@@ -84,7 +102,14 @@ def hardware() -> dict:
 
 @app.get("/api/llm-status")
 def llm_status() -> dict:
-    """Snapshot of the local LLM stack — used by the UI's first-run banner."""
+    """Snapshot of the LLM stack — used by the UI's privacy banner.
+
+    Reports whichever backend ``default_backend()`` picks given the
+    current env vars, alongside the local Ollama state so the UI can
+    show "X is running locally" / "Y is hosted by Z".
+    """
+    import os
+
     from capstone.firstrun import (
         installed_models,
         is_first_run,
@@ -94,6 +119,29 @@ def llm_status() -> dict:
     from capstone.llm.hardware import detect_hardware_tier
 
     hw = detect_hardware_tier()
+
+    # Figure out which backend would be selected without instantiating
+    # it (instantiation may hit network / require an API key).
+    explicit = os.environ.get("CAPSTONE_LLM_BACKEND", "").lower()
+    has_groq_key = bool(os.environ.get("GROQ_API_KEY"))
+    if explicit == "groq":
+        active = "groq"
+    elif explicit in ("ollama", "default"):
+        active = "ollama"
+    elif has_groq_key:
+        active = "groq"
+    else:
+        active = "ollama"
+
+    active_provider_name = (
+        "Groq (hosted)" if active == "groq" else "Ollama (local)"
+    )
+    requires_redaction = active == "groq"
+    active_model = (
+        os.environ.get("CAPSTONE_LLM_MODEL")
+        or ("llama-3.3-70b-versatile" if active == "groq" else hw.model)
+    )
+
     return {
         "first_run": is_first_run(),
         "ollama_installed": ollama_binary_present(),
@@ -101,6 +149,12 @@ def llm_status() -> dict:
         "installed_models": installed_models(),
         "recommended_model": hw.model,
         "tier": hw.tier,
+        # New fields for the privacy banner:
+        "active_backend": active,
+        "active_provider_name": active_provider_name,
+        "active_model": active_model,
+        "requires_redaction": requires_redaction,
+        "groq_key_set": has_groq_key,
     }
 
 
@@ -143,6 +197,7 @@ def api_recommend(req: RecommendRequest) -> RecommendationResult:
             credit_load=credit_load,
             top_n=req.top_n,
             use_llm=req.use_llm,
+            user_prompt=req.user_prompt,
         )
     return result
 
@@ -172,6 +227,13 @@ def list_courses(
 
         rows = conn.execute(sql, params).fetchall()
         return [dict(r) for r in rows]
+
+
+@app.get("/api/majors")
+def list_majors() -> list[dict]:
+    """Return the list of implemented majors for UI dropdowns."""
+    from capstone.scrapers.programs import implemented_majors
+    return implemented_majors()
 
 
 @app.get("/api/major-requirements")

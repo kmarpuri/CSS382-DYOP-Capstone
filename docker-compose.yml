@@ -1,0 +1,36 @@
+services:
+  # ── Capstone app ────────────────────────────────────────────────────
+  capstone:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: capstone:latest
+    container_name: capstone
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    volumes:
+      # Persistent SQLite catalog. Delete the named volume to start fresh.
+      - capstone_data:/home/capstone/data
+      # Optional: bind-mount a directory of transcripts you want to parse.
+      # Uncomment and adjust the host path to expose your PDFs to the
+      # container. The path is read-only.
+      # - ./transcripts:/home/capstone/transcripts:ro
+    environment:
+      # macOS / Windows: host.docker.internal resolves to the host.
+      # Linux users should add `extra_hosts: ["host.docker.internal:host-gateway"]`
+      # or set OLLAMA_HOST=http://<their-ollama-host>:11434 directly.
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      CAPSTONE_LLM_MODEL: ${CAPSTONE_LLM_MODEL:-}
+    extra_hosts:
+      # Make host.docker.internal work on Linux too.
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8765/api/health',timeout=3); sys.exit(0 if r.status==200 else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  capstone_data:

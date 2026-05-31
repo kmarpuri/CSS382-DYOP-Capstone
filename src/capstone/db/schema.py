@@ -85,6 +85,24 @@ CREATE TABLE IF NOT EXISTS time_schedule (
 CREATE INDEX IF NOT EXISTS idx_ts_course ON time_schedule(course_id);
 CREATE INDEX IF NOT EXISTS idx_ts_quarter ON time_schedule(quarter, year);
 
+-- Professor ratings (cache of public RateMyProfessor data, opt-in)
+CREATE TABLE IF NOT EXISTS professor_ratings (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL,        -- e.g., "John Smith"
+    name_normalized TEXT NOT NULL,        -- "JOHN SMITH" for case/order-insensitive match
+    school_id       TEXT,                 -- RMP school ID
+    school_name     TEXT,                 -- "University of Washington Bothell Campus"
+    department      TEXT,
+    avg_rating      REAL,                 -- 0.0–5.0
+    avg_difficulty  REAL,                 -- 0.0–5.0
+    num_ratings     INTEGER,
+    would_take_again_pct REAL,            -- 0.0–100.0, NULL if unknown
+    rmp_legacy_id   TEXT,                 -- legacy numeric ID, used for the public profile URL
+    last_scraped    TEXT NOT NULL,
+    UNIQUE(name_normalized, school_id)
+);
+CREATE INDEX IF NOT EXISTS idx_prof_name ON professor_ratings(name_normalized);
+
 -- Scrape metadata for cache management
 CREATE TABLE IF NOT EXISTS scrape_metadata (
     source      TEXT PRIMARY KEY,        -- e.g., "catalog:css", "timeschedule:AUT2026:css"
@@ -117,6 +135,7 @@ def reset_db(conn: sqlite3.Connection) -> None:
         "time_schedule",
         "prerequisites",
         "major_requirements",
+        "professor_ratings",
         "courses",
         "scrape_metadata",
         "schema_version",

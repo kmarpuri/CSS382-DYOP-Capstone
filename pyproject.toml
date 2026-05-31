@@ -36,6 +36,8 @@ dev = [
 llm = [
     "ollama>=0.3",
     "psutil>=5.9",
+    "groq>=0.11",
+    "python-dotenv>=1.0",
 ]
 ui = [
     "fastapi>=0.110",
@@ -46,6 +48,11 @@ pdf = [
     "pypdf>=4.0",
     "pdf2image>=1.17",
     "pytesseract>=0.3",
+]
+turso = [
+    # Hosted libSQL (Turso) driver for the deployed app. Local dev and
+    # the test suite use the stdlib sqlite3 module and do NOT need this.
+    "libsql>=0.1.11",
 ]
 
 [project.scripts]
