@@ -312,7 +312,3 @@ Or hit `/api/parse-transcript` over HTTP from the host (the UI does this for you
 ```bash
 chflags -R nohidden .venv
 ```
-
-## License
-
-MIT
