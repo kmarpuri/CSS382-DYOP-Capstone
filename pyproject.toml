@@ -32,6 +32,7 @@ dev = [
     "pypdf>=4.0",
     "fastapi>=0.110",
     "httpx>=0.27",
+    "reportlab>=4.0",
 ]
 llm = [
     "ollama>=0.3",

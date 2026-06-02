@@ -87,6 +87,24 @@ async def _lifespan(app: FastAPI):
     )
     yield
 
+    # If the user is using Ollama, explicitly unload the model from memory when the server shuts down.
+    # Otherwise, the Ollama daemon keeps the 17+GB model in RAM for 5 minutes by default.
+    if provider == "Ollama (local)":
+        logger = logging.getLogger("uvicorn.error")
+        logger.info("Instructing Ollama daemon to unload model '%s' from RAM...", model)
+        import httpx
+        try:
+            # keep_alive=0 forces immediate eviction from memory
+            with httpx.Client() as client:
+                client.post(
+                    "http://localhost:11434/api/generate",
+                    json={"model": model, "keep_alive": 0},
+                    timeout=3.0
+                )
+            logger.info("Ollama model successfully unloaded. Memory freed.")
+        except Exception as e:
+            logger.warning("Failed to unload Ollama model during shutdown: %s", e)
+
 
 app = FastAPI(
     title="Capstone — UW Bothell Course Advisor",
@@ -297,6 +315,7 @@ def major_requirements(major: str = "CSSE") -> list[dict]:
 # ── UI ──────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
 def ui_root() -> str:
     """Serve the single-page UI bundled inside the package."""
     ui_html = Path(__file__).parent / "ui" / "index.html"
