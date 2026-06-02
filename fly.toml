@@ -1,58 +1,43 @@
-# Capstone — Fly.io deployment
-# ---------------------------
-# 1. brew install flyctl  (or curl -L https://fly.io/install.sh | sh)
-# 2. fly auth login
-# 3. fly launch --no-deploy --copy-config         # generates this file's app name
-# 4. fly secrets set GROQ_API_KEY=gsk_yourkey
-# 5. fly secrets set CAPSTONE_LLM_BACKEND=groq
-# 6. (optional) hosted DB — point the app at a managed Turso database:
-#      fly secrets set CAPSTONE_TURSO_URL=libsql://capstone-uwb-you.turso.io
-#      fly secrets set CAPSTONE_TURSO_AUTH_TOKEN=eyJhbGci...
-#    Leave these unset to use the on-volume SQLite file instead.
-# 7. (optional) populate RateMyProfessor ratings on first boot so the UI's
-#    instructor badges appear — no CLI needed (RMP scraping is opt-in):
-#      fly secrets set CAPSTONE_SCRAPE_PROFESSORS=1
-# 8. fly deploy
+# fly.toml app configuration file generated for capstone-uwb on 2026-06-01T20:36:27-07:00
 #
-# Free-tier sizing — 256 MB / shared CPU works fine for this app
-# because all the heavy lifting happens on Groq's servers.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "capstone-uwb"
-primary_region = "sea"            # Seattle — closest to UW
+app = 'capstone-uwb'
+primary_region = 'sjc'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  CAPSTONE_SKIP_FIRSTRUN = "1"
-  CAPSTONE_LLM_BACKEND   = "groq"
-  CAPSTONE_LLM_MODEL     = "llama-3.3-70b-versatile"
-  PORT                   = "8765"
+  CAPSTONE_LLM_BACKEND = 'groq'
+  CAPSTONE_LLM_MODEL = 'llama-3.3-70b-versatile'
+  CAPSTONE_SKIP_FIRSTRUN = '1'
+  PORT = '8765'
+
+[[mounts]]
+  source = 'capstone_data'
+  destination = '/home/capstone/data'
 
 [http_service]
   internal_port = 8765
-  force_https   = true
-  auto_stop_machines  = "stop"
+  force_https = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0       # scale to zero on the free tier
+  min_machines_running = 0
 
   [http_service.concurrency]
-    type       = "requests"
-    soft_limit = 50
+    type = 'requests'
     hard_limit = 100
+    soft_limit = 50
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout  = "5s"
-    grace_period = "10s"
-    method   = "GET"
-    path     = "/api/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/api/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
-
-# Persistent SQLite catalog across deploys
-[[mounts]]
-  source = "capstone_data"
-  destination = "/home/capstone/data"
+  size = 'shared-cpu-1x'
+  memory = '512mb'

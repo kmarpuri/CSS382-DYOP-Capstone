@@ -82,8 +82,12 @@ def main() -> int:
         from capstone.scrapers.programs import PROGRAM_SCRAPERS
 
         try:
-            scraper = CatalogScraper(config.scraper)
-            n = scraper.scrape(conn, departments=config.scraper.bothell_departments)
+            with CatalogScraper(
+                departments=config.scraper.bothell_departments,
+                rate_limit=config.scraper.rate_limit_seconds,
+                user_agent=config.scraper.user_agent,
+            ) as scraper:
+                n = scraper.scrape(conn)
             logger.info(f"  ✓ Scraped {n} catalog rows")
         except Exception as e:
             logger.warning(f"Catalog scrape failed ({e}); continuing with empty catalog.")
