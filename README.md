@@ -1,5 +1,7 @@
 # Capstone — UW Bothell Course Advisor
 
+**Live Demo:** [https://capstone-uwb.fly.dev/](https://capstone-uwb.fly.dev/)
+
 A web application that helps UW Bothell undergraduates plan their next quarter's course schedule. It scrapes UW Bothell's catalog, parses a student's transcript PDF, and combines a deterministic rule-based ranker with an LLM reasoning layer to produce a ranked, prereq-satisfying plan. You can also hand it a **free-form preference prompt** (e.g. _"morning classes only, nothing on Fridays"_), and each recommendation shows the **meeting times** of the sections actually on offer for the target quarter.
 
 The app is **dual-mode** — the same codebase powers a deployed public website and a fully-local run on a student's laptop:
