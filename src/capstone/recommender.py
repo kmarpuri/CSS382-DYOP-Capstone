@@ -54,6 +54,11 @@ class Recommendation(BaseModel):
     # when no rating is on file. The "best" tiebreaker is num_ratings
     # so single-review outliers don't surface as "5 stars".
     best_instructor: dict | None = None
+    # Scheduled section meetings for the target quarter (days/times, and
+    # building/room when the source publishes them). Sourced from the
+    # public UW time schedule. Empty when the course isn't offered that
+    # quarter or the schedule hasn't been scraped.
+    meetings: list[dict] = Field(default_factory=list)
 
 
 class RecommendationResult(BaseModel):
@@ -116,6 +121,21 @@ class Recommender:
 
         warnings: list[str] = []
 
+        # Deterministic time-of-day / day-of-week filtering. We parse the
+        # user's free-form prompt ("mornings", "no Fridays", "before 3pm")
+        # and drop candidates whose scheduled sections all fall outside the
+        # requested window — *before* the LLM ever sees them. Major-required
+        # courses are never silently dropped; they're kept with a warning so
+        # the student can decide.
+        from capstone.scheduling import parse_time_preference
+
+        time_pref = parse_time_preference(user_prompt)
+        if time_pref.is_active():
+            ranked, time_warnings = self._apply_time_preference(
+                ranked, target_quarter, time_pref,
+            )
+            warnings.extend(time_warnings)
+
         # Optional LLM reranking
         llm_used = False
         if use_llm:
@@ -137,6 +157,15 @@ class Recommender:
                 logger.warning(f"LLM layer unavailable, falling back to rule-based: {e}")
                 warnings.append(f"LLM reasoning skipped: {e}")
 
+        # Prerequisite ordering: if a recommended course is an (unmet)
+        # prerequisite of another recommended course, it must rank first —
+        # you can't take the dependent without it. This runs last so it
+        # overrides any LLM reshuffle.
+        ranked, prereq_warnings = self._reorder_by_prereqs(
+            ranked, build_completed_grades(transcript),
+        )
+        warnings.extend(prereq_warnings)
+
         # Fill-to-N plan
         chosen, fill_warnings = self._fill_to_n(ranked, credit_load)
         warnings.extend(fill_warnings)
@@ -149,6 +178,12 @@ class Recommender:
         # Look up cached instructor ratings for every recommended course
         # in one pass so we don't N+1 the DB.
         course_to_best_instructor = self._lookup_best_instructors(
+            [s.course_id for s in ranked[:top_n]], target_quarter,
+        )
+
+        # Scheduled meeting times (days/times + building/room when
+        # available) for every recommended course, in one pass.
+        course_to_meetings = self._lookup_sections(
             [s.course_id for s in ranked[:top_n]], target_quarter,
         )
 
@@ -185,6 +220,7 @@ class Recommender:
                     completed_soft_prereqs=done_soft,
                     missing_soft_prereqs=missing_soft,
                     best_instructor=course_to_best_instructor.get(s.course_id),
+                    meetings=course_to_meetings.get(s.course_id, []),
                 )
             )
 
@@ -261,6 +297,176 @@ class Recommender:
             if best is not None:
                 result[cid] = best
         return result
+
+    # ── Meeting times ──────────────────────────────────────────────────
+
+    def _lookup_sections(
+        self,
+        course_ids: list[str],
+        target_quarter: str | None,
+    ) -> dict[str, list[dict]]:
+        """Return ``{course_id: [section_dict, ...]}`` from the time schedule.
+
+        Each section dict carries days/times and building/room. Building
+        and room are typically ``None`` for UW Bothell because its public
+        time schedule omits them; they're included so the UI shows them
+        automatically if a future source fills them in. Courses with no
+        scheduled sections in ``target_quarter`` are absent from the result.
+        """
+        if not course_ids:
+            return {}
+
+        qmark = ",".join(["?"] * len(course_ids))
+        params: list = list(course_ids)
+        sql = (
+            "SELECT course_id, section_id, days, time_start, time_end, "
+            "building, room, status, credits "
+            f"FROM time_schedule WHERE course_id IN ({qmark})"
+        )
+        if target_quarter:
+            sql += " AND quarter = ?"
+            params.append(target_quarter)
+        sql += " ORDER BY course_id, section_id"
+        try:
+            rows = self.conn.execute(sql, params).fetchall()
+        except Exception:
+            return {}
+
+        result: dict[str, list[dict]] = {}
+        for r in rows:
+            result.setdefault(r["course_id"], []).append(
+                {
+                    "section_id": r["section_id"],
+                    "days": r["days"],
+                    "time_start": r["time_start"],
+                    "time_end": r["time_end"],
+                    "building": r["building"],
+                    "room": r["room"],
+                    "status": r["status"],
+                    "credits": r["credits"],
+                }
+            )
+        return result
+
+    # ── Time-preference filtering ──────────────────────────────────────
+
+    def _apply_time_preference(
+        self,
+        ranked: list[CourseScore],
+        target_quarter: str | None,
+        pref,
+    ) -> tuple[list[CourseScore], list[str]]:
+        """Drop candidates whose sections all fall outside ``pref``.
+
+        A course survives if it has at least one scheduled section that
+        fits the requested days/time window (or no scheduled sections at
+        all — nothing to violate). Major-required courses (``progress_score
+        >= 1.0``) that conflict are *kept* but pushed below the conforming
+        courses and flagged, so a critical-path class is never silently
+        hidden by a soft preference.
+        """
+        from capstone.scheduling import course_fits
+
+        sections = self._lookup_sections(
+            [s.course_id for s in ranked], target_quarter,
+        )
+
+        fitting: list[CourseScore] = []
+        kept_critical: list[CourseScore] = []
+        dropped: list[str] = []
+        for s in ranked:
+            if course_fits(sections.get(s.course_id), pref):
+                fitting.append(s)
+            elif s.progress_score >= 1.0:
+                kept_critical.append(s)
+            else:
+                dropped.append(s.course_id)
+
+        warnings: list[str] = []
+        for s in kept_critical:
+            warnings.append(
+                f"{s.course_id} doesn't fit your stated time preference, but "
+                f"it's required for your major — kept so you can decide. "
+                f"Check for an alternate section."
+            )
+        if dropped:
+            warnings.append(
+                "Filtered out "
+                + ", ".join(dropped[:8])
+                + (f" and {len(dropped) - 8} more" if len(dropped) > 8 else "")
+                + " — no section matched your time preference."
+            )
+
+        return fitting + kept_critical, warnings
+
+    # ── Prerequisite ordering ──────────────────────────────────────────
+
+    def _reorder_by_prereqs(
+        self,
+        ranked: list[CourseScore],
+        completed: dict[str, str] | None = None,
+    ) -> tuple[list[CourseScore], list[str]]:
+        """Stable topological reorder so prereqs precede their dependents.
+
+        Only an *unmet* prerequisite that is itself recommended forces
+        ordering. In practice these are **concurrent** prereqs: a course is
+        eligible this quarter only because the student plans to take its
+        prereq alongside it (e.g. CSS 343 needs CSS 301 concurrently). When
+        both show up, the prereq is placed first — you can't sensibly list
+        the dependent above a class it depends on.
+
+        Prereqs the student already satisfied (via completed work or an
+        alternate ``one_of`` option) are NOT predecessors — those courses
+        are unrelated for ordering purposes. The sort is stable, disturbing
+        the deterministic/LLM order as little as possible.
+        """
+        from capstone.graph import _grade_meets
+
+        completed = completed or {}
+        ids = {s.course_id for s in ranked}
+
+        # Direct, blocking, *unmet* prereqs that are also recommended.
+        prereqs_within: dict[str, set[str]] = {}
+        for s in ranked:
+            cid = s.course_id
+            needed: set[str] = set()
+            for e in self.graph.direct_prereqs(cid):
+                if e.type == "recommended":
+                    continue              # soft prep — not blocking
+                if e.group_id and e.group_id > 0:
+                    continue              # one_of — handled by eligibility, skip
+                if e.prereq_id not in ids:
+                    continue              # prereq isn't recommended — irrelevant
+                if _grade_meets(completed.get(e.prereq_id), e.min_grade):
+                    continue              # already satisfied — not a predecessor
+                needed.add(e.prereq_id)
+            prereqs_within[cid] = needed
+
+        placed: list[CourseScore] = []
+        placed_ids: set[str] = set()
+        remaining = list(ranked)
+        moved = False
+        while remaining:
+            for i, s in enumerate(remaining):
+                if prereqs_within[s.course_id] <= placed_ids:
+                    if i != 0:
+                        moved = True
+                    placed.append(s)
+                    placed_ids.add(s.course_id)
+                    remaining.pop(i)
+                    break
+            else:
+                # Cycle / unsatisfiable within set — append the rest as-is.
+                placed.extend(remaining)
+                break
+
+        warnings: list[str] = []
+        if moved:
+            warnings.append(
+                "Reordered some recommendations so prerequisites appear "
+                "before the courses that depend on them."
+            )
+        return placed, warnings
 
     # ── Fill-to-N ──────────────────────────────────────────────────────
 

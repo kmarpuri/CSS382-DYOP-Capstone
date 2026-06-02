@@ -1,6 +1,6 @@
 # Capstone — UW Bothell Course Advisor
 
-A web application that helps UW Bothell undergraduates plan their next quarter's course schedule. It scrapes UW Bothell's catalog, parses a student's transcript PDF, and combines a deterministic rule-based ranker with an LLM reasoning layer to produce a ranked, prereq-satisfying plan. You can also hand it a **free-form preference prompt** (e.g. _"morning classes only, and a well-rated professor"_) and it will surface **RateMyProfessor instructor ratings** for the sections actually on offer.
+A web application that helps UW Bothell undergraduates plan their next quarter's course schedule. It scrapes UW Bothell's catalog, parses a student's transcript PDF, and combines a deterministic rule-based ranker with an LLM reasoning layer to produce a ranked, prereq-satisfying plan. You can also hand it a **free-form preference prompt** (e.g. _"morning classes only, nothing on Fridays"_), and each recommendation shows the **meeting times** of the sections actually on offer for the target quarter.
 
 The app is **dual-mode** — the same codebase powers a deployed public website and a fully-local run on a student's laptop:
 
@@ -32,12 +32,9 @@ capstone recommend transcript.json --load 15 --quarter AUT --no-llm
 
 # 4b. ...or with LLM reasoning + a free-form preference prompt
 capstone recommend transcript.json --quarter WIN \
-  --prompt "I prefer morning classes and a well-rated professor"
+  --prompt "I prefer morning classes, nothing on Fridays"
 
-# 5. (optional) cache RateMyProfessor ratings for UW Bothell instructors
-capstone scrape professors
-
-# 6. or launch the web UI
+# 5. or launch the web UI
 capstone serve
 # → http://127.0.0.1:8765
 ```
@@ -104,8 +101,8 @@ capstone recommend TRANSCRIPT.json            # ranked next-quarter plan
   --load N            target credit load (default 15, hard ceiling 25)
   --top N             show top-N candidates (default 10)
   --quarter AUT|WIN|SPR|SUM
-  --prompt "..."      free-form preferences passed to the LLM (e.g. times,
-                      professor quality); ignored with --no-llm
+  --prompt "..."      free-form preferences passed to the LLM (e.g. preferred
+                      times, course style); ignored with --no-llm
   --no-llm            skip LLM reasoning (instant, deterministic only)
 capstone serve [--port 8765]                  # FastAPI + bundled UI
 ```
@@ -142,7 +139,7 @@ credit_limits:
   - In **local** mode, no transcript content leaves the machine — inference runs locally via Ollama (or MLX on Apple Silicon).
   - In **hosted** mode, the transcript's `student_name` and `student_id` are stripped by [`redact.py`](src/capstone/llm/redact.py) *before* any call to Groq. Only de-identified course history is sent, and only to generate reasoning text.
 - **Web scraping is limited to public pages** on `washington.edu` and `uwb.edu`. No login is performed. **MyPlan is never scraped** — it's behind UW NetID SSO and scraping it would violate UW's ToS.
-- **RateMyProfessor** ratings are an **opt-in** convenience (`capstone scrape professors`). Scraping RMP is against their Terms of Service, so it's off by default, rate-limited, cached locally (30-day TTL), and the data is never re-published — it only annotates your own recommendations.
+- **RateMyProfessor** ratings have an **opt-in** scraper (`capstone scrape professors`). Scraping RMP is against their Terms of Service, so it's off by default, rate-limited, cached locally (30-day TTL), and the data is never re-published. Note: UW Bothell's *public* time schedule does not publish instructor names, so cached ratings currently can't be mapped to specific sections and are **not surfaced in the UI** — the recommendation cards show section **meeting times** instead.
 - `robots.txt` is honored. Scrapes are rate-limited to 1 req/sec with a clearly-identified User-Agent.
 - Transcript PDFs are read but **not copied or persisted** unless the user explicitly saves a profile.
 - The local cache lives under `~/.capstone/cache/` (per `platformdirs`).
@@ -161,7 +158,7 @@ This application is intended for the student whose transcript is being analyzed.
 | 4     | ✅ Ollama-backed LLM reasoner, FastAPI server, single-page UI                                                                                           |
 | 5     | ✅ All 35 UW Bothell undergraduate majors — STEM (CSSE, ACMPT, CE, EE, ME, Cybersec, Math B.S./B.A., Physics, Chem, Bio B.S./B.A.), Business, Health (HSCI/HSBA/Nursing), Education, Environment (EnvStud/Earth/Climate), IAS (Media Arts, MedCom, Studio Visual Art, CLA, IntArts, Philosophy, AES, CommPsy, GWSS, Global Studies, LEPP, Policy Studies, SEHB) |
 | 6     | ✅ Hosted LLM mode via Groq (Llama 3.3 70B), PII redaction, deploy configs for Fly / Railway / Heroku-style |
-| 7     | ✅ Free-form user-preference prompt routed to the LLM, RateMyProfessor instructor-ratings scraper + cache, and hosted Turso (libSQL) cloud-database backend |
+| 7     | ✅ Free-form user-preference prompt routed to the LLM, per-section meeting times shown on each recommendation card, RateMyProfessor scraper + cache (opt-in), and hosted Turso (libSQL) cloud-database backend |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the design rationale and data-flow diagrams.
 
@@ -202,6 +199,8 @@ Capstone is dual-mode: the same codebase serves a public website *and* runs loca
 | Local | Ollama (any pulled model) | on-disk SQLite | neither set — falls back automatically |
 
 (The two switches are independent: you can run hosted Groq against a local SQLite file, or vice-versa.)
+
+At startup the server logs which backend it resolved, e.g. `LLM backend: Groq (hosted) · model: llama-3.3-70b-versatile`, so you can confirm the posture at a glance. The same info is exposed at `GET /api/llm-status` and shown in the UI. If it reads `Ollama (local)` when you expected Groq, the process didn't pick up `GROQ_API_KEY` / `CAPSTONE_LLM_BACKEND` — restart the server after setting them (env vars are read once at boot).
 
 When hosted reasoning is on, transcripts have `student_name` and `student_id` redacted before *any* network call (see [`src/capstone/llm/redact.py`](src/capstone/llm/redact.py)). The UI surfaces a yellow banner explaining the data flow.
 
@@ -260,8 +259,8 @@ The [`Procfile`](Procfile) declares the same two-step boot: `python -m capstone.
 [`src/capstone/deploy/boot.py`](src/capstone/deploy/boot.py) runs before uvicorn. Because a hosted site has **no CLI**, this is how the database gets seeded. Each dataset is guarded by its own emptiness check, so a redeploy is a no-op for what's already there:
 
 * **Catalog + all 35 majors' requirements** — scraped on the first ever deploy.
-* **Time schedule** (public UWB section offerings, incl. per-section instructors) — scraped by default; set `CAPSTONE_SCRAPE_TIMESCHEDULE=0` to skip.
-* **RateMyProfessor ratings** — **opt-in** (RMP's ToS prohibits automated access). Set `CAPSTONE_SCRAPE_PROFESSORS=1` and boot caches them, so the UI's instructor-rating badges appear **without anyone running a CLI**. This is the hosted equivalent of `capstone scrape professors`.
+* **Time schedule** (public UWB section offerings — section IDs, meeting days/times, enrollment) — scraped by default; set `CAPSTONE_SCRAPE_TIMESCHEDULE=0` to skip. This is what populates the per-section meeting times shown on each recommendation card. (The public schedule does not publish instructor names or rooms, so those columns stay empty.)
+* **RateMyProfessor ratings** — **opt-in** (RMP's ToS prohibits automated access). Set `CAPSTONE_SCRAPE_PROFESSORS=1` and boot caches them. This is the hosted equivalent of `capstone scrape professors`. Note: because the public schedule has no instructor names, these ratings can't be mapped to sections and are not currently shown in the UI.
 
 On Turso, boot then `sync()`s everything up to the cloud primary before the server starts. Your platform's persistent volume (or your Turso database) keeps it all warm across releases — the expensive scrape happens exactly once.
 

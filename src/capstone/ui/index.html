@@ -1113,7 +1113,7 @@
     <div class="summary-card" style="margin-top: 1rem;">
       <h3>Backend</h3>
       <div class="stat"><span class="k">Catalog</span><span class="v" id="dbStatus">Checking…</span></div>
-      <div class="stat"><span class="k">Ollama</span><span class="v" id="ollamaStatus">Checking…</span></div>
+      <div class="stat"><span class="k" id="backendName">LLM</span><span class="v" id="backendStatus">Checking…</span></div>
       <div class="stat"><span class="k">Model</span><span class="v" id="modelStatus">—</span></div>
     </div>
   </aside>
@@ -1170,7 +1170,7 @@ function apiFetch(path, options) {
 async function refreshBackendStatus() {
   if (!SERVED_BY_API) {
     $("dbStatus").textContent = "Offline";
-    $("ollamaStatus").textContent = "Offline";
+    $("backendStatus").textContent = "Offline";
     return;
   }
   try {
@@ -1183,11 +1183,28 @@ async function refreshBackendStatus() {
     $("dbStatus").innerHTML = health.db_exists
       ? '<span class="pill good">Ready</span>'
       : '<span class="pill warn">Run scrape</span>';
-    $("ollamaStatus").innerHTML = llm.ollama_running
-      ? '<span class="pill good">Running</span>'
-      : '<span class="pill warn">Offline</span>';
-    if (llm.installed_models && llm.installed_models.length) {
-      $("modelStatus").textContent = llm.installed_models[0];
+
+    // Label + status reflect the *active* backend, not whichever clients
+    // happen to be installed. (Ollama may be running locally even when
+    // Groq is the configured backend — don't let that mislead.)
+    const isGroq = llm.active_backend === "groq";
+    $("backendName").textContent = llm.active_provider_name || (isGroq ? "Groq" : "Ollama");
+    if (isGroq) {
+      $("backendStatus").innerHTML = llm.groq_key_set
+        ? '<span class="pill good">Ready</span>'
+        : '<span class="pill bad">No API key</span>';
+    } else {
+      $("backendStatus").innerHTML = llm.ollama_running
+        ? '<span class="pill good">Running</span>'
+        : '<span class="pill warn">Offline</span>';
+    }
+
+    // Model: the hosted model for Groq; the loaded local model for Ollama.
+    const localModel = (llm.installed_models && llm.installed_models.length)
+      ? llm.installed_models[0] : null;
+    const model = isGroq ? llm.active_model : (localModel || llm.active_model);
+    if (model) {
+      $("modelStatus").textContent = model;
     } else {
       $("modelStatus").innerHTML = '<span class="pill bad">none</span>';
     }
@@ -1203,8 +1220,6 @@ async function refreshBackendStatus() {
       banner.hidden = false;
       $("hostedProvider").textContent =
         `${llm.active_provider_name} (${llm.active_model})`;
-      // Override the model sidebar entry to show the hosted model
-      $("modelStatus").textContent = llm.active_model;
     } else {
       pill.classList.remove("hosted");
       pill.title = "All inference is on this machine";
@@ -1213,7 +1228,7 @@ async function refreshBackendStatus() {
     }
   } catch (e) {
     $("dbStatus").textContent = "—";
-    $("ollamaStatus").textContent = "—";
+    $("backendStatus").textContent = "—";
   }
 }
 refreshBackendStatus();
@@ -1466,8 +1481,9 @@ function renderCards(result) {
         (c) => `<span class="pill warn" title="Soft prereq — would make this easier">↑ ${escapeHtml(c)}</span>`),
     ].join(" ");
 
-    // Instructor rating badge (from cached RMP data, if any)
-    const profPill = renderInstructorBadge(r.best_instructor);
+    // Scheduled meeting times for the target quarter (days/times, plus
+    // building/room when the source publishes them).
+    const meetingsHtml = renderMeetings(r.meetings);
 
     card.innerHTML = `
       <div class="rank">${r.rank}</div>
@@ -1477,8 +1493,8 @@ function renderCards(result) {
           <span class="title">${escapeHtml(r.title ?? "")}</span>
           <span class="pill">${r.credit_hours} cr</span>
           ${r.fits_load ? '<span class="pill good">In plan</span>' : ""}
-          ${profPill}
         </div>
+        ${meetingsHtml}
         ${softPills ? `<div class="meta-row">${softPills}</div>` : ""}
         ${r.reasoning ? `<div class="reasoning">${escapeHtml(r.reasoning)}</div>` : ""}
       </div>
@@ -1494,19 +1510,44 @@ function renderCards(result) {
   }
 }
 
-function renderInstructorBadge(info) {
-  if (!info || info.avg_rating == null) return "";
-  const rating = Number(info.avg_rating).toFixed(1);
-  const n = info.num_ratings ?? 0;
-  const lowSignal = n < 5;
-  const cls = lowSignal ? "" : (info.avg_rating >= 4 ? "good"
-                                : info.avg_rating >= 3 ? "gold" : "warn");
-  const diff = info.avg_difficulty != null
-    ? ` · diff ${Number(info.avg_difficulty).toFixed(1)}` : "";
-  const title = `${escapeHtml(info.name ?? "instructor")} — ${rating}/5 from ${n} review${n === 1 ? "" : "s"}${diff}`;
-  return `<a class="pill ${cls}" title="${title}" target="_blank" rel="noopener"
-             href="${info.rmp_url || "#"}"
-             style="text-decoration: none;">★ ${rating}${lowSignal ? ` (${n})` : ""}</a>`;
+// Format a UW time-schedule clock value ("1100", "545", "145") into
+// "11:00", "5:45", "1:45". A trailing "P" means PM. Returns "" for blanks.
+function formatClock(t) {
+  if (!t) return "";
+  let s = String(t).trim();
+  let pm = false;
+  if (/p$/i.test(s)) { pm = true; s = s.slice(0, -1); }
+  if (!/^\d{3,4}$/.test(s)) return s + (pm ? "pm" : "");
+  const mins = s.slice(-2);
+  const hrs = s.slice(0, -2);
+  return `${hrs}:${mins}${pm ? "pm" : ""}`;
+}
+
+// Render the scheduled meeting times for a course. Days + time range are
+// from the public UW time schedule; building/room appear only if present
+// (UW Bothell's public feed omits them, so usually just days + times).
+function renderMeetings(meetings) {
+  if (!Array.isArray(meetings) || meetings.length === 0) return "";
+  const parts = [];
+  for (const m of meetings) {
+    const days = (m.days || "").trim();
+    const start = formatClock(m.time_start);
+    const end = formatClock(m.time_end);
+    const time = start && end ? `${start}–${end}` : (start || "");
+    const loc = [m.building, m.room].filter(Boolean).join(" ").trim();
+    const sect = m.section_id ? `${escapeHtml(m.section_id)} ` : "";
+
+    let label;
+    if (days || time) {
+      label = `${sect}${escapeHtml(days)}${days && time ? " " : ""}${escapeHtml(time)}`.trim();
+    } else {
+      label = `${sect}TBA`.trim();
+    }
+    if (loc) label += ` · ${escapeHtml(loc)}`;
+    const closed = (m.status || "").toLowerCase() === "closed";
+    parts.push(`<span class="pill${closed ? " warn" : ""}" title="Section ${escapeHtml(m.section_id || "")}">🕒 ${label}</span>`);
+  }
+  return `<div class="meta-row">${parts.join(" ")}</div>`;
 }
 
 function scoreBar(label, val, cls) {

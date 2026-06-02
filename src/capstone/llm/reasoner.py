@@ -22,6 +22,7 @@ from typing import Any
 
 from capstone.llm.backend import LLMBackend
 from capstone.ranker import CourseScore
+from capstone.scheduling import format_time_window
 from capstone.transcript.models import Transcript
 
 logger = logging.getLogger(__name__)
@@ -72,10 +73,14 @@ You will be given:
   enforces formal prereqs.
 - Optionally, a `user_constraints` field — a free-form sentence the
   student wrote describing personal preferences (e.g., "prefer mornings",
-  "no Fridays", "I learn better in project-heavy classes"). Treat this as
-  a strong-but-soft signal: honor it when reasonable, but never let it
-  override hard registration constraints or eject a critical-path course
-  that's only offered when the student says they're unavailable.
+  "no Fridays", "I learn better in project-heavy classes"). Day/time
+  preferences in this field have ALREADY been enforced deterministically:
+  the candidate list has been pre-filtered so every non-critical course
+  shown has at least one section matching the requested window. Section
+  `time` values are human-readable (e.g. "11:15 AM – 12:20 PM"). The only
+  exception is a major-required course that conflicts — it is intentionally
+  still present so you can call out the conflict rather than hide it.
+  Honor any non-time preferences (project-heavy, etc.) as a strong signal.
 
 YOUR JOB:
 1. RERANK the candidates with multi-quarter foresight. Favor courses that
@@ -283,7 +288,7 @@ class LLMReasoner:
             section_info = {
                 "section": r["section_id"],
                 "days": r["days"],
-                "time": f"{r['time_start']}–{r['time_end']}" if r["time_start"] else None,
+                "time": format_time_window(r["time_start"], r["time_end"]),
                 "instructor": r["instructor"],
                 "room": f"{r['building']} {r['room']}".strip() if r["building"] else None,
                 "status": r["status"],

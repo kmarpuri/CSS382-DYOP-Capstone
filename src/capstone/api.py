@@ -22,7 +22,9 @@ The UI surfaces a banner reflecting whichever posture is active.
 from __future__ import annotations
 
 import logging
+import os
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
@@ -46,11 +48,52 @@ from capstone.transcript.models import Transcript
 
 logger = logging.getLogger(__name__)
 
+
+def _active_backend_label() -> tuple[str, str]:
+    """Resolve (provider_name, model) the same way ``/api/llm-status`` does,
+    without instantiating the backend (so a missing client can't crash boot).
+    """
+    explicit = os.environ.get("CAPSTONE_LLM_BACKEND", "").lower()
+    if explicit == "groq" or (not explicit and os.environ.get("GROQ_API_KEY")):
+        active = "groq"
+    else:
+        active = "ollama"
+
+    model = os.environ.get("CAPSTONE_LLM_MODEL")
+    if not model:
+        if active == "groq":
+            model = "llama-3.3-70b-versatile"
+        else:
+            try:
+                from capstone.llm.hardware import detect_hardware_tier
+                model = detect_hardware_tier().model
+            except Exception:
+                model = "(auto)"
+    provider = "Groq (hosted)" if active == "groq" else "Ollama (local)"
+    return provider, model
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Print which LLM backend the server will use, so it's obvious at boot
+    (and not a surprise when the UI badge differs from expectations).
+
+    Emits through uvicorn's own logger so the line shows alongside
+    "Application startup complete" regardless of root logging config.
+    """
+    provider, model = _active_backend_label()
+    logging.getLogger("uvicorn.error").info(
+        "LLM backend: %s  ·  model: %s", provider, model
+    )
+    yield
+
+
 app = FastAPI(
     title="Capstone — UW Bothell Course Advisor",
     version="0.1.0",
     description="Local-only course recommendation engine. "
                 "No data leaves the machine.",
+    lifespan=_lifespan,
 )
 
 
