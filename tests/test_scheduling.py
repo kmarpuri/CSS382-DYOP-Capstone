@@ -62,7 +62,9 @@ def test_parse_section_window_morning_to_afternoon():
 
 def test_parse_section_window_crosses_noon_bump():
     # 11:30 AM → 1:10 PM: end "110" would parse before start, gets bumped
-    start, end = parse_section_window("1130", "110")
+    res = parse_section_window("1130", "110")
+    assert res is not None
+    start, end = res
     assert start == 11 * 60 + 30
     assert end == 13 * 60 + 10
 

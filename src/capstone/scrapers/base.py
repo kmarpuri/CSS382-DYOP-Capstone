@@ -29,7 +29,7 @@ class BaseScraper(ABC):
         self.rate_limit = rate_limit
         self.user_agent = user_agent
         self._last_request_time: float = 0.0
-        self._robot_parsers: dict[str, RobotFileParser] = {}
+        self._robot_parsers: dict[str, RobotFileParser | None] = {}
         self._client = httpx.Client(
             headers={"User-Agent": self.user_agent},
             timeout=30.0,

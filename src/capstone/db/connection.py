@@ -207,7 +207,7 @@ def _connect_turso(db_path: Path, url: str, token: str) -> _LibsqlConnection:
     import libsql  # imported lazily so local/test runs never need the driver
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    raw = libsql.connect(str(db_path), sync_url=url, auth_token=token)
+    raw = libsql.connect(str(db_path), sync_url=url, auth_token=token)  # type: ignore[attr-defined]
     conn = _LibsqlConnection(raw)
     # Best-effort initial pull so reads see existing cloud data immediately.
     try:

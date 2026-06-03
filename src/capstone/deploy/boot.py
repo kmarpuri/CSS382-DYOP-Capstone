@@ -64,9 +64,8 @@ def main() -> int:
 
     conn = connect(db_path)
     init_db(conn)
-    stats = get_scrape_stats(conn)
-    course_count = stats.get("courses", 0)
-    req_count = stats.get("major_requirements", 0)
+    course_count = _count(conn, "courses")
+    req_count = _count(conn, "major_requirements")
     logger.info(f"Existing catalog: {course_count} courses, {req_count} requirements")
 
     # Each dataset seeds independently (guarded by its own emptiness check)

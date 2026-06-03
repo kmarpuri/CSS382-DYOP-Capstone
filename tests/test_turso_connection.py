@@ -29,7 +29,7 @@ def turso_conn(tmp_path):
     """A libSQL-backed connection in local-only mode (no sync_url)."""
     raw = libsql.connect(str(tmp_path / "local.db"))
     conn = _LibsqlConnection(raw)
-    init_db(conn)
+    init_db(conn)  # type: ignore
     return conn
 
 

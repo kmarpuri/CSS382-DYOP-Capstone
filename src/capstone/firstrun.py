@@ -291,6 +291,7 @@ def pull_model(
             Progress,
             TextColumn,
             TimeRemainingColumn,
+            TaskID,
         )
     except ImportError as e:
         console.print(f"[red]ollama Python client missing: {e}[/red]")
@@ -308,7 +309,7 @@ def pull_model(
         transient=False,
     )
 
-    tasks: dict[str, int] = {}
+    tasks: dict[str, TaskID] = {}
     try:
         with progress:
             for chunk in client.pull(model, stream=True):
