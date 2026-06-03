@@ -11,10 +11,7 @@ We're testing:
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 from capstone.db.connection import connect

@@ -17,12 +17,11 @@ import sqlite3
 from datetime import datetime, timezone
 
 import pytest
-
-libsql = pytest.importorskip("libsql")
-
 from capstone.db.connection import _LibsqlConnection, _LibsqlRow, using_turso
 from capstone.db.schema import init_db
 from capstone.scrapers.ratemyprofessor import lookup_ratings
+
+libsql = pytest.importorskip("libsql")
 
 
 @pytest.fixture

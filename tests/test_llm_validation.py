@@ -9,10 +9,7 @@ non-negotiable per the spec. These tests verify that:
 
 from __future__ import annotations
 
-import sqlite3
 from unittest.mock import MagicMock
-
-import pytest
 
 from capstone.llm.reasoner import LLMReasoner
 from capstone.ranker import CourseScore

@@ -18,7 +18,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from pathlib import Path
 
 from capstone.config import PROJECT_ROOT, load_config
 from capstone.db.connection import connect, using_turso

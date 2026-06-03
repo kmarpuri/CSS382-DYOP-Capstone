@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import logging
 import sqlite3
-from dataclasses import dataclass, field
-from typing import Iterable
 
 from pydantic import BaseModel, Field
 
@@ -20,9 +18,7 @@ from capstone.ranker import (
     CourseScore,
     Ranker,
     _course_level,
-    _parse_credits,
     build_completed_grades,
-    build_in_progress_set,
 )
 from capstone.transcript.models import Transcript
 

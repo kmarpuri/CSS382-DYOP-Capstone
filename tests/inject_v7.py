@@ -1,5 +1,3 @@
-import os
-
 with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 

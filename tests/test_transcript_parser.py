@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from capstone.transcript.models import CompletedCourse, Transcript
+from capstone.transcript.models import CompletedCourse
 from capstone.transcript.parser import TranscriptParser
 
 

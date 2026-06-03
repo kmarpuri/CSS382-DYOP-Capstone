@@ -98,7 +98,7 @@ def scrape_refresh(
     config = load_config()
     db_path = config.database.resolve_path(PROJECT_ROOT)
 
-    console.print(f"\n[bold blue]Capstone Scraper[/bold blue]")
+    console.print("\n[bold blue]Capstone Scraper[/bold blue]")
     console.print(f"Database: {db_path}")
 
     with get_connection(db_path) as conn:

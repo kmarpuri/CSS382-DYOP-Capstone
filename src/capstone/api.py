@@ -269,7 +269,6 @@ def list_courses(
     department: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    config = load_config()
     db_path = _db_path()
     if not db_path.exists():
         raise HTTPException(503, "Course database not initialized.")

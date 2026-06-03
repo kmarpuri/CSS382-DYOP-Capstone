@@ -1,4 +1,3 @@
-import os
 import base64
 
 with open("src/capstone/ui/index.html", "r") as f:

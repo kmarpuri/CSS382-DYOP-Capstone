@@ -61,8 +61,10 @@ class ChemistryBSProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "organic", ORGANIC_CHEM)
         count += self._insert_each(conn, "organic_lab", ORGANIC_LAB)
         count += self._insert_each(conn, "physical_chem", [*PHYSICAL_CHEM, PHYSICAL_CHEM_LAB])
-        self._insert_req(conn, "inorganic", INORGANIC); count += 1
-        self._insert_req(conn, "biochem", BIOCHEM); count += 1
+        self._insert_req(conn, "inorganic", INORGANIC)
+        count += 1
+        self._insert_req(conn, "biochem", BIOCHEM)
+        count += 1
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "math", self.MATH_PREREQS)
         count += self._insert_each(conn, "science", self.SCIENCE_PREREQS)
@@ -110,8 +112,10 @@ class ChemistryBSBiochemProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "general_chem", GENERAL_CHEM)
         count += self._insert_each(conn, "organic", ORGANIC_CHEM)
         count += self._insert_each(conn, "organic_lab", ORGANIC_LAB)
-        self._insert_req(conn, "physical_chem", PHYSICAL_CHEM[0]); count += 1   # Only PChem I in this option
-        self._insert_req(conn, "inorganic", INORGANIC); count += 1
+        self._insert_req(conn, "physical_chem", PHYSICAL_CHEM[0])
+        count += 1   # Only PChem I in this option
+        self._insert_req(conn, "inorganic", INORGANIC)
+        count += 1
         count += self._insert_each(conn, "biochemistry", self.BIOCHEM_DEPTH)
         count += self._insert_each(conn, "biology_for_biochem", INTRO_BIO)
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
@@ -154,8 +158,10 @@ class ChemistryBAProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "general_chem", GENERAL_CHEM)
         count += self._insert_each(conn, "organic", ORGANIC_CHEM)
         count += self._insert_each(conn, "organic_lab", ORGANIC_LAB)
-        self._insert_req(conn, "inorganic", INORGANIC); count += 1
-        self._insert_req(conn, "physical_chem", PHYSICAL_CHEM[0]); count += 1
+        self._insert_req(conn, "inorganic", INORGANIC)
+        count += 1
+        self._insert_req(conn, "physical_chem", PHYSICAL_CHEM[0])
+        count += 1
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "math", self.MATH_PREREQS)
         count += self._insert_each(conn, "science", self.SCIENCE_PREREQS)

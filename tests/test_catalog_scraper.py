@@ -3,9 +3,6 @@
 Uses fixture HTML instead of live requests to test parsing in isolation.
 """
 
-import sqlite3
-import re
-
 import pytest
 
 from capstone.db.connection import connect

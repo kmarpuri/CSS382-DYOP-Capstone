@@ -6,7 +6,6 @@ verification was done manually against the real free-tier API.
 
 from __future__ import annotations
 
-import os
 from unittest.mock import MagicMock, patch
 
 import pytest

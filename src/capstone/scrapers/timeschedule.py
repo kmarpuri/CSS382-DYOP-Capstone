@@ -98,7 +98,6 @@ class TimeScheduleScraper(BaseScraper):
         lines = text.split("\n")
 
         current_course_id = None
-        current_course_title = None
 
         for line in lines:
             line = line.strip()
@@ -113,7 +112,6 @@ class TimeScheduleScraper(BaseScraper):
             if course_header:
                 cid = re.sub(r"\s+", " ", course_header.group(1).strip())
                 current_course_id = cid
-                current_course_title = course_header.group(2).strip()
                 continue
 
             if current_course_id is None:

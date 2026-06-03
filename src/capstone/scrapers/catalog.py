@@ -92,10 +92,6 @@ class CatalogScraper(BaseScraper):
 
         # Better approach: parse the HTML structure
         # Each course is typically in a paragraph or div with an anchor
-        all_links = soup.find_all("a", href=True)
-        course_blocks = []
-        current_text = ""
-
         # The crscatb pages have course info as runs of text between anchors
         # Let's parse by finding course ID patterns in the full HTML text
         # and extracting structured data
