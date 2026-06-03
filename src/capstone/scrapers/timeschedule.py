@@ -55,13 +55,9 @@ class TimeScheduleScraper(BaseScraper):
                 sections = self._parse_time_schedule(
                     html, dept, quarter_code, year, now
                 )
-                count = self._persist_sections(
-                    conn, sections, dept, qtr, now
-                )
+                count = self._persist_sections(conn, sections, dept, qtr, now)
                 total += count
-                logger.info(
-                    f"Scraped {count} sections for {dept} {qtr}"
-                )
+                logger.info(f"Scraped {count} sections for {dept} {qtr}")
 
         return total
 
@@ -200,7 +196,7 @@ class TimeScheduleScraper(BaseScraper):
         # Notes: everything after the enrollment data
         notes = None
         if enrl_match:
-            after_enrl = line[enrl_match.end():]
+            after_enrl = line[enrl_match.end() :]
             # Clean up and capture notes
             notes_text = re.sub(r"\$\d+", "", after_enrl).strip()
             # Remove grading info already captured

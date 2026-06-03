@@ -122,10 +122,14 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(CREATE_TABLES)
 
     # Check / set schema version
-    cur = conn.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1")
+    cur = conn.execute(
+        "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1"
+    )
     row = cur.fetchone()
     if row is None:
-        conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
+        conn.execute(
+            "INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,)
+        )
     conn.commit()
 
 

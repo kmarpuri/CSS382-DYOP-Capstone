@@ -94,8 +94,21 @@ class TestWrapperWithAppCode:
                  avg_rating, avg_difficulty, num_ratings,
                  would_take_again_pct, rmp_legacy_id, last_scraped
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            [("Munehiro Fukuda", "MUNEHIRO FUKUDA", "1431", "UWB", "CSS",
-              4.5, 3.2, 42, 88.0, "987654", now)],
+            [
+                (
+                    "Munehiro Fukuda",
+                    "MUNEHIRO FUKUDA",
+                    "1431",
+                    "UWB",
+                    "CSS",
+                    4.5,
+                    3.2,
+                    42,
+                    88.0,
+                    "987654",
+                    now,
+                )
+            ],
         )
         turso_conn.commit()
 
@@ -119,9 +132,7 @@ class TestWrapperWithAppCode:
             (now,),
         )
         turso_conn.rollback()
-        n = turso_conn.execute(
-            "SELECT COUNT(*) FROM professor_ratings"
-        ).fetchone()[0]
+        n = turso_conn.execute("SELECT COUNT(*) FROM professor_ratings").fetchone()[0]
         assert n == 0
 
 

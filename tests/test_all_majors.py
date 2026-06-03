@@ -36,22 +36,24 @@ class TestMajorContract:
     def test_class_attributes(self, major):
         cls = PROGRAM_SCRAPERS[major]
         scraper = cls()
-        assert scraper.major_code == major, (
-            f"{cls.__name__}.major_code must match registry key {major!r}"
-        )
-        assert scraper.major_name, (
-            f"{cls.__name__}.major_name must be a non-empty string"
-        )
+        assert (
+            scraper.major_code == major
+        ), f"{cls.__name__}.major_code must match registry key {major!r}"
+        assert (
+            scraper.major_name
+        ), f"{cls.__name__}.major_name must be a non-empty string"
         # Synergies are optional but must be the right shape if provided
         for entry in scraper.synergies:
-            assert len(entry) == 3, f"{major}: each synergy is (downstream, [up..], rationale)"
+            assert (
+                len(entry) == 3
+            ), f"{major}: each synergy is (downstream, [up..], rationale)"
             downstream, upstreams, rationale = entry
             assert isinstance(downstream, str), f"{major}: downstream must be a str"
             assert isinstance(upstreams, list), f"{major}: upstreams must be a list"
             assert all(isinstance(u, str) for u in upstreams)
-            assert isinstance(rationale, str) and rationale, (
-                f"{major}: every synergy needs a rationale string"
-            )
+            assert (
+                isinstance(rationale, str) and rationale
+            ), f"{major}: every synergy needs a rationale string"
 
     def test_scrape_requirements_runs(self, major, fresh_db):
         """``scrape_requirements`` must run end-to-end without raising
@@ -80,8 +82,7 @@ class TestMajorContract:
         cls = PROGRAM_SCRAPERS[major]
         cls().scrape_requirements(fresh_db)
         row = fresh_db.execute(
-            "SELECT scraped_at, record_count FROM scrape_metadata "
-            "WHERE source = ?",
+            "SELECT scraped_at, record_count FROM scrape_metadata " "WHERE source = ?",
             (f"requirements:{major}",),
         ).fetchone()
         assert row is not None, f"{major}: scrape_metadata not stamped"
@@ -110,12 +111,13 @@ class TestRegistryInvariants:
     def test_coverage_size(self):
         """We should have a substantial registry of majors. If this
         drops below 20 by accident, something got deleted."""
-        assert len(PROGRAM_SCRAPERS) >= 20, (
-            f"Only {len(PROGRAM_SCRAPERS)} majors registered — did one get removed?"
-        )
+        assert (
+            len(PROGRAM_SCRAPERS) >= 20
+        ), f"Only {len(PROGRAM_SCRAPERS)} majors registered — did one get removed?"
 
     def test_implemented_majors_helper(self):
         from capstone.scrapers.programs import implemented_majors
+
         data = implemented_majors()
         assert len(data) == len(PROGRAM_SCRAPERS)
         for entry in data:

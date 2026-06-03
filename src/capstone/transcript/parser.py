@@ -49,6 +49,7 @@ def _normalize_quarter(name: str) -> Quarter:
 
 # ── Course-code normalization ───────────────────────────────────────────────
 
+
 # UW course codes can have multi-word prefixes ("B WRIT 134", "B BUS 215",
 # "CSSSKL 142"). On the transcript these are emitted with variable column
 # widths, so we collapse all internal whitespace to a single space.
@@ -57,6 +58,7 @@ def _normalize_course_id(raw: str) -> str:
 
 
 # ── PDF text extraction ─────────────────────────────────────────────────────
+
 
 def _extract_text_pdfplumber(path: Path) -> str:
     """Extract text from a UW transcript PDF, splitting two-column layouts.
@@ -81,12 +83,18 @@ def _extract_text_pdfplumber(path: Path) -> str:
             # Heuristic: top 12% of the page is single-column header.
             header_top = 0
             header_bottom = h * 0.15
-            split_x = w / 2 + 5    # nudge the split slightly right of center
+            split_x = w / 2 + 5  # nudge the split slightly right of center
 
             try:
-                header_text = page.crop((0, header_top, w, header_bottom)).extract_text() or ""
-                left_text = page.crop((0, header_bottom, split_x, h)).extract_text() or ""
-                right_text = page.crop((split_x, header_bottom, w, h)).extract_text() or ""
+                header_text = (
+                    page.crop((0, header_top, w, header_bottom)).extract_text() or ""
+                )
+                left_text = (
+                    page.crop((0, header_bottom, split_x, h)).extract_text() or ""
+                )
+                right_text = (
+                    page.crop((split_x, header_bottom, w, h)).extract_text() or ""
+                )
             except Exception:
                 # If cropping fails, fall back to whole-page extraction.
                 header_text = ""
@@ -110,7 +118,7 @@ def _extract_text_pypdf(path: Path) -> str:
     return "\n".join((p.extract_text() or "") for p in reader.pages)
 
 
-def _extract_text_ocr(path: Path) -> str:    # pragma: no cover - optional dep
+def _extract_text_ocr(path: Path) -> str:  # pragma: no cover - optional dep
     try:
         import pdf2image
         import pytesseract
@@ -462,6 +470,7 @@ class TranscriptParser:
 
 
 # ── Module-level convenience ───────────────────────────────────────────────
+
 
 def parse_transcript(path: Path | str, debug: bool = False) -> Transcript:
     """Parse a transcript PDF and return a :class:`Transcript`."""

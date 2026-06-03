@@ -182,8 +182,8 @@ class CatalogScraper(BaseScraper):
         # line, and DOTALL causes the non-greedy .+? to eat across lines into
         # the next course entry.
         pattern = re.compile(
-            rf"({prefix_re}\s+\d{{2,3}})[ \t]+"   # Course ID + same-line space
-            rf"([A-Z][^\n\(]+?)\s*"                # Title (stays on one line)
+            rf"({prefix_re}\s+\d{{2,3}})[ \t]+"  # Course ID + same-line space
+            rf"([A-Z][^\n\(]+?)\s*"  # Title (stays on one line)
             rf"\((\d[\d\-\*,. ]*(?:max\.\s*\d+)?)\)",  # Credits in parens
         )
 
@@ -234,22 +234,22 @@ class CatalogScraper(BaseScraper):
             # Parse prerequisites from description
             prereqs = self._parse_prerequisites(description, course_id)
 
-            courses.append({
-                "course_id": course_id,
-                "title": title,
-                "credits": credits_str,
-                "description": description,
-                "offering_pattern": offering_pattern,
-                "department": dept_prefix,
-                "scraped_at": scraped_at,
-                "prerequisites": prereqs,
-            })
+            courses.append(
+                {
+                    "course_id": course_id,
+                    "title": title,
+                    "credits": credits_str,
+                    "description": description,
+                    "offering_pattern": offering_pattern,
+                    "department": dept_prefix,
+                    "scraped_at": scraped_at,
+                    "prerequisites": prereqs,
+                }
+            )
 
         return courses
 
-    def _parse_prerequisites(
-        self, description: str, course_id: str
-    ) -> list[dict]:
+    def _parse_prerequisites(self, description: str, course_id: str) -> list[dict]:
         """Parse prerequisite text from a course description.
 
         Returns a list of dicts with keys:
@@ -280,11 +280,15 @@ class CatalogScraper(BaseScraper):
                 continue
 
             # Detect concurrent
-            is_concurrent = "may be taken concurrently" in segment.lower() or \
-                           "which may be taken concurrently" in segment.lower()
+            is_concurrent = (
+                "may be taken concurrently" in segment.lower()
+                or "which may be taken concurrently" in segment.lower()
+            )
 
             # Detect "minimum grade of X in"
-            grade_match = re.search(r"minimum grade of ([\d.]+) in", segment, re.IGNORECASE)
+            grade_match = re.search(
+                r"minimum grade of ([\d.]+) in", segment, re.IGNORECASE
+            )
             default_grade = grade_match.group(1) if grade_match else None
 
             # Check if this is an OR-clause (contains "or" or "either")
@@ -292,9 +296,7 @@ class CatalogScraper(BaseScraper):
 
             # Extract all course IDs from this segment
             # Course ID pattern: 1-2 word prefix + 3 digit number
-            course_pattern = re.compile(
-                r"\b([A-Z][A-Z &]{0,8})\s+(\d{3})\b"
-            )
+            course_pattern = re.compile(r"\b([A-Z][A-Z &]{0,8})\s+(\d{3})\b")
             found_courses = []
             for m in course_pattern.finditer(segment):
                 prefix = m.group(1).strip()
@@ -311,21 +313,25 @@ class CatalogScraper(BaseScraper):
                 # OR-clause: group them together
                 group_counter += 1
                 for cid in found_courses:
-                    prereqs.append({
-                        "prereq_id": cid,
-                        "type": "concurrent" if is_concurrent else "one_of",
-                        "group_id": group_counter,
-                        "min_grade": default_grade,
-                    })
+                    prereqs.append(
+                        {
+                            "prereq_id": cid,
+                            "type": "concurrent" if is_concurrent else "one_of",
+                            "group_id": group_counter,
+                            "min_grade": default_grade,
+                        }
+                    )
             else:
                 # AND requirements (individual)
                 for cid in found_courses:
-                    prereqs.append({
-                        "prereq_id": cid,
-                        "type": "concurrent" if is_concurrent else "required",
-                        "group_id": 0,
-                        "min_grade": default_grade,
-                    })
+                    prereqs.append(
+                        {
+                            "prereq_id": cid,
+                            "type": "concurrent" if is_concurrent else "required",
+                            "group_id": 0,
+                            "min_grade": default_grade,
+                        }
+                    )
 
         return prereqs
 

@@ -65,16 +65,16 @@ class TestRegistry:
 
     def test_all_majors_subclass_program_scraper(self):
         for code, cls in PROGRAM_SCRAPERS.items():
-            assert issubclass(cls, ProgramScraper), (
-                f"{code} → {cls.__name__} doesn't subclass ProgramScraper"
-            )
+            assert issubclass(
+                cls, ProgramScraper
+            ), f"{code} → {cls.__name__} doesn't subclass ProgramScraper"
 
     def test_major_codes_match_class_attrs(self):
         """The registry key must equal the class's declared major_code."""
         for code, cls in PROGRAM_SCRAPERS.items():
-            assert cls.major_code == code, (
-                f"Registry key {code!r} != class attribute {cls.major_code!r}"
-            )
+            assert (
+                cls.major_code == code
+            ), f"Registry key {code!r} != class attribute {cls.major_code!r}"
 
     def test_major_names_populated(self):
         for cls in PROGRAM_SCRAPERS.values():
@@ -141,9 +141,9 @@ class TestEveryMajor:
         scraper = get_program_scraper(major)
         dispatched = synergy_map(major)
         direct = scraper.synergy_map()
-        assert dispatched == direct, (
-            f"{major}: dispatcher returned different data than the class method"
-        )
+        assert (
+            dispatched == direct
+        ), f"{major}: dispatcher returned different data than the class method"
 
 
 class TestFactoryDispatch:

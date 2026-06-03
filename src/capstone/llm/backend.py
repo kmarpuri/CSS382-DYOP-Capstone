@@ -78,8 +78,7 @@ class GroqBackend(LLMBackend):
             from groq import Groq  # noqa: F401
         except ImportError as e:
             raise RuntimeError(
-                "groq Python client not installed. "
-                "Run: pip install 'capstone[llm]'"
+                "groq Python client not installed. " "Run: pip install 'capstone[llm]'"
             ) from e
 
         self._api_key = api_key or os.environ.get("GROQ_API_KEY")
@@ -90,9 +89,7 @@ class GroqBackend(LLMBackend):
             )
 
         self._model = (
-            model
-            or os.environ.get("CAPSTONE_LLM_MODEL")
-            or self.DEFAULT_MODEL
+            model or os.environ.get("CAPSTONE_LLM_MODEL") or self.DEFAULT_MODEL
         )
 
     @property
@@ -115,8 +112,10 @@ class GroqBackend(LLMBackend):
         # "json" to appear somewhere in the messages. The real reasoner
         # prompt already does, but for safety we append a marker so any
         # future caller can't accidentally trip the 400.
-        json_marker = "" if "json" in (system + prompt).lower() else (
-            "\n\n(Respond in JSON only.)"
+        json_marker = (
+            ""
+            if "json" in (system + prompt).lower()
+            else ("\n\n(Respond in JSON only.)")
         )
 
         # Groq honors the OpenAI-style response_format. The model is
@@ -140,9 +139,7 @@ class GroqBackend(LLMBackend):
                 return json.loads(content)
             except json.JSONDecodeError as e:
                 last_err = e
-                logger.warning(
-                    f"Groq returned non-JSON (attempt {attempt + 1}): {e}"
-                )
+                logger.warning(f"Groq returned non-JSON (attempt {attempt + 1}): {e}")
                 continue
             except Exception as e:
                 last_err = e
@@ -179,8 +176,15 @@ class OllamaBackend(LLMBackend):
     # Items earlier in the list are preferred. Matched as substring of
     # the model name (e.g., "qwen3" matches "qwen3:30b-a3b").
     _PREFERRED_FAMILIES = (
-        "qwen3", "gemma3", "phi4", "llama3.3", "llama3.2",
-        "qwen2.5", "gemma2", "llama3", "mistral",
+        "qwen3",
+        "gemma3",
+        "phi4",
+        "llama3.3",
+        "llama3.2",
+        "qwen2.5",
+        "gemma2",
+        "llama3",
+        "mistral",
     )
 
     def __init__(self, model: str | None = None, host: str | None = None):
@@ -206,7 +210,9 @@ class OllamaBackend(LLMBackend):
                 logger.warning(
                     "Ollama model %r is not installed. Falling back to %r. "
                     "Pull the preferred model with: ollama pull %s",
-                    chosen, fallback, chosen,
+                    chosen,
+                    fallback,
+                    chosen,
                 )
                 chosen = fallback
             else:
@@ -216,7 +222,8 @@ class OllamaBackend(LLMBackend):
                 logger.warning(
                     "Ollama model %r is not installed and no fallback is "
                     "available. Pull a model first: ollama pull %s",
-                    chosen, chosen,
+                    chosen,
+                    chosen,
                 )
 
         self._model = chosen
@@ -231,6 +238,7 @@ class OllamaBackend(LLMBackend):
         """
         try:
             import ollama
+
             client = ollama.Client(host=self._host) if self._host else ollama
             data = client.list()
         except Exception as e:
@@ -269,7 +277,8 @@ class OllamaBackend(LLMBackend):
     def _pick_fallback(self, installed: list[str], exclude: str) -> str | None:
         """Pick the best already-installed chat model."""
         candidates = [
-            n for n in installed
+            n
+            for n in installed
             if not any(h in n.lower() for h in self._EMBEDDING_MODEL_HINTS)
             and n != exclude
         ]
@@ -320,9 +329,7 @@ class OllamaBackend(LLMBackend):
                 return json.loads(content)
             except json.JSONDecodeError as e:
                 last_err = e
-                logger.warning(
-                    f"LLM returned non-JSON (attempt {attempt + 1}): {e}"
-                )
+                logger.warning(f"LLM returned non-JSON (attempt {attempt + 1}): {e}")
                 continue
             except Exception as e:
                 last_err = e

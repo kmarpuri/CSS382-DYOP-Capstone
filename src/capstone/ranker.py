@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 # ── Per-course scoring output ─────────────────────────────────────────────
 
+
 @dataclass
 class CourseScore:
     """A single course's deterministic scoring breakdown."""
@@ -41,8 +42,8 @@ class CourseScore:
     criticality_score: float = 0.0
     availability_score: float = 0.0
     progress_score: float = 0.0
-    synergy_score: float = 0.0       # soft-prereq prep completeness
-    raw_difficulty: float = 0.0      # used for balance penalty later
+    synergy_score: float = 0.0  # soft-prereq prep completeness
+    raw_difficulty: float = 0.0  # used for balance penalty later
     eligibility_ok: bool = True
     eligibility_reasons: list[str] = field(default_factory=list)
     offered_next_quarter: bool = True
@@ -61,6 +62,7 @@ class CourseScore:
 
 
 # ── Eligibility / completion bookkeeping ──────────────────────────────────
+
 
 def build_completed_grades(transcript: Transcript) -> dict[str, str]:
     """Map ``course_id → best grade`` across the transcript.
@@ -121,7 +123,7 @@ def _parse_offering_letters(pattern: str | None) -> set[str]:
     out: set[str] = set()
     i = 0
     while i < len(pattern):
-        if pattern[i:i + 2] == "Sp":
+        if pattern[i : i + 2] == "Sp":
             out.add("Sp")
             i += 2
         elif pattern[i] in ("A", "W", "S"):
@@ -156,9 +158,8 @@ def _offering_frequency(offering_pattern: str | None) -> int:
 
 # ── Major-requirement loading ────────────────────────────────────────────
 
-def load_major_requirements(
-    conn: sqlite3.Connection, major: str
-) -> list[dict]:
+
+def load_major_requirements(conn: sqlite3.Connection, major: str) -> list[dict]:
     """Return rows from major_requirements as plain dicts."""
     rows = conn.execute(
         "SELECT category, course_id, required_count, group_id, notes "
@@ -205,6 +206,7 @@ def unmet_requirements(
 
 
 # ── The main ranker class ────────────────────────────────────────────────
+
 
 class Ranker:
     """Score every eligible course in the catalog for the next quarter."""
@@ -282,7 +284,11 @@ class Ranker:
         # the student's existing courses).
         effective_by_course: dict[str, set[str]] = {}
         for cid in self.graph.graph.nodes:
-            if cid in already_eligible and cid not in completed and cid not in in_progress:
+            if (
+                cid in already_eligible
+                and cid not in completed
+                and cid not in in_progress
+            ):
                 # Course is eligible for the student but not yet taken;
                 # downstream might still be ineligible.
                 pass
@@ -400,14 +406,13 @@ class Ranker:
             # the "you've already done the prep that makes this easier"
             # pedagogical signal (e.g., CSS 422 → CSS 430).
             soft_edges = [
-                e for e in self.graph.direct_prereqs(cid)
-                if e.type == "recommended"
+                e for e in self.graph.direct_prereqs(cid) if e.type == "recommended"
             ]
             if soft_edges:
                 completed_soft = sum(
-                    1 for e in soft_edges
-                    if e.prereq_id in completed
-                    and _passes(completed[e.prereq_id])
+                    1
+                    for e in soft_edges
+                    if e.prereq_id in completed and _passes(completed[e.prereq_id])
                 )
                 score.synergy_score = completed_soft / len(soft_edges)
             else:
@@ -443,6 +448,7 @@ class Ranker:
 
 
 # ── helpers ──────────────────────────────────────────────────────────────
+
 
 def _passes(grade: str) -> bool:
     if grade in ("CR", "S", "P"):

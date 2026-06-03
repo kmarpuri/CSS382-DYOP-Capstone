@@ -168,7 +168,9 @@ class _LibsqlConnection:
         self.row_factory = None
 
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> _LibsqlCursor:
-        cur = self._raw.execute(sql) if params is None else self._raw.execute(sql, params)
+        cur = (
+            self._raw.execute(sql) if params is None else self._raw.execute(sql, params)
+        )
         return _LibsqlCursor(cur)
 
     def executemany(self, sql: str, seq: Iterable[Sequence[Any]]) -> _LibsqlCursor:

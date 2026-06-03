@@ -3,14 +3,22 @@ import re
 with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 
-css_start_match = re.search(r'/\* ── Apple DESIGN\.md Authentic Styles ──────────────────────────── \*/', text)
-css_end = text.find('</style>')
+css_start_match = re.search(
+    r"/\* ── Apple DESIGN\.md Authentic Styles ──────────────────────────── \*/", text
+)
+css_end = text.find("</style>")
 body_start = text.find('<div id="landing-page"')
 body_end_match = re.search(r'<div id="app-container"[^>]*>', text)
-js_start = text.find('// ── Landing Page Logic ───────────────────────────────────────')
-js_end = text.find('</script>', js_start)
+js_start = text.find("// ── Landing Page Logic ───────────────────────────────────────")
+js_end = text.find("</script>", js_start)
 
-if not (css_start_match and body_start != -1 and body_end_match and js_start != -1 and js_end != -1):
+if not (
+    css_start_match
+    and body_start != -1
+    and body_end_match
+    and js_start != -1
+    and js_end != -1
+):
     print("Could not find markers")
     exit(1)
 
@@ -257,7 +265,18 @@ v5_js = """
   }
 """
 
-new_text = text[:css_start] + v5_css + "\n" + text[css_end:body_start] + v5_html + "\n" + text[body_end:js_start] + v5_js + "\n" + text[js_end:]
+new_text = (
+    text[:css_start]
+    + v5_css
+    + "\n"
+    + text[css_end:body_start]
+    + v5_html
+    + "\n"
+    + text[body_end:js_start]
+    + v5_js
+    + "\n"
+    + text[js_end:]
+)
 
 with open("src/capstone/ui/index.html", "w") as f:
     f.write(new_text)

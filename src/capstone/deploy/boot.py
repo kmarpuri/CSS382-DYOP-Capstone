@@ -26,6 +26,7 @@ from capstone.db.schema import get_scrape_stats, init_db
 # Make sure GROQ_API_KEY etc. are loaded from .env if present.
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -89,7 +90,9 @@ def main() -> int:
                 n = scraper.scrape(conn)
             logger.info(f"  ✓ Scraped {n} catalog rows")
         except Exception as e:
-            logger.warning(f"Catalog scrape failed ({e}); continuing with empty catalog.")
+            logger.warning(
+                f"Catalog scrape failed ({e}); continuing with empty catalog."
+            )
 
         for code, cls in PROGRAM_SCRAPERS.items():
             try:

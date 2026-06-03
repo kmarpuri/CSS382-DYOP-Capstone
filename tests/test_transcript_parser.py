@@ -75,6 +75,7 @@ UW GRADE POINT AVG. 3.20 CREDITS EARNED 5.0
 
 # ── Tests ────────────────────────────────────────────────────────────────
 
+
 class TestHeaderParsing:
     def test_extracts_student_basics(self):
         t = TranscriptParser().parse_text(SAMPLE_CSSE_TEXT)
@@ -138,10 +139,14 @@ class TestInProgress:
 class TestTransferCredits:
     def test_ib_credits(self):
         t = TranscriptParser().parse_text(SAMPLE_CSSE_TEXT)
-        assert any(tc.course_id == "CHEM 142" and tc.source == "IB"
-                   for tc in t.transfer_credits)
-        assert any(tc.course_id == "MATH 120" and tc.source == "IB"
-                   for tc in t.transfer_credits)
+        assert any(
+            tc.course_id == "CHEM 142" and tc.source == "IB"
+            for tc in t.transfer_credits
+        )
+        assert any(
+            tc.course_id == "MATH 120" and tc.source == "IB"
+            for tc in t.transfer_credits
+        )
 
 
 class TestSummary:
@@ -164,24 +169,36 @@ class TestGradePolicy:
 
     def test_meets_prereq_grade(self):
         c = CompletedCourse(
-            course_id="CSS 142", title="x", credits=5.0,
-            grade="2.0", quarter="AUT", year=2024,
+            course_id="CSS 142",
+            title="x",
+            credits=5.0,
+            grade="2.0",
+            quarter="AUT",
+            year=2024,
         )
-        assert c.meets_prereq_grade(None)        # default 2.0
+        assert c.meets_prereq_grade(None)  # default 2.0
         assert c.meets_prereq_grade("2.0")
         assert not c.meets_prereq_grade("2.5")
 
     def test_cr_satisfies_anything(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=1.0,
-            grade="CR", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=1.0,
+            grade="CR",
+            quarter="AUT",
+            year=2024,
         )
         assert c.meets_prereq_grade("2.8")
 
     def test_withdrawn_never_passes(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="W", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="W",
+            quarter="AUT",
+            year=2024,
         )
         assert not c.is_passed
 

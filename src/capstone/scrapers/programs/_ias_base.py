@@ -28,7 +28,7 @@ class IASProgramScraper(ProgramScraper):
 
     # Subclasses override these:
     CORE: list[str] = []
-    INQUIRY: list[str] = ["BIS 240"]    # Social-science inquiry default
+    INQUIRY: list[str] = ["BIS 240"]  # Social-science inquiry default
     ELECTIVE_PREFIX: str = "BIS 300+"
     ELECTIVE_CREDITS: int = 25
     CAPSTONE: list[str] = ["BIS 499"]
@@ -43,7 +43,9 @@ class IASProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
         self._insert_req(
-            conn, "elective", self.ELECTIVE_PREFIX,
+            conn,
+            "elective",
+            self.ELECTIVE_PREFIX,
             required_count=self.ELECTIVE_CREDITS,
             notes=f"{self.ELECTIVE_CREDITS} credits of upper-division BIS electives",
         )

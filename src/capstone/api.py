@@ -32,6 +32,7 @@ from typing import Annotated
 # instances (e.g., behind gunicorn on Railway / Fly).
 try:
     from dotenv import load_dotenv
+
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 except ImportError:
     pass
@@ -66,6 +67,7 @@ def _active_backend_label() -> tuple[str, str]:
         else:
             try:
                 from capstone.llm.hardware import detect_hardware_tier
+
                 model = detect_hardware_tier().model
             except Exception:
                 model = "(auto)"
@@ -93,13 +95,14 @@ async def _lifespan(app: FastAPI):
         logger = logging.getLogger("uvicorn.error")
         logger.info("Instructing Ollama daemon to unload model '%s' from RAM...", model)
         import httpx
+
         try:
             # keep_alive=0 forces immediate eviction from memory
             with httpx.Client() as client:
                 client.post(
                     "http://localhost:11434/api/generate",
                     json={"model": model, "keep_alive": 0},
-                    timeout=3.0
+                    timeout=3.0,
                 )
             logger.info("Ollama model successfully unloaded. Memory freed.")
         except Exception as e:
@@ -110,7 +113,7 @@ app = FastAPI(
     title="Capstone — UW Bothell Course Advisor",
     version="0.1.0",
     description="Local-only course recommendation engine. "
-                "No data leaves the machine.",
+    "No data leaves the machine.",
     lifespan=_lifespan,
 )
 
@@ -121,6 +124,7 @@ def _db_path() -> Path:
 
 
 # ── Models ──────────────────────────────────────────────────────────────
+
 
 class RecommendRequest(BaseModel):
     transcript: Transcript
@@ -136,6 +140,7 @@ class RecommendRequest(BaseModel):
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────
+
 
 @app.get("/api/health")
 def health() -> dict:
@@ -194,13 +199,10 @@ def llm_status() -> dict:
     else:
         active = "ollama"
 
-    active_provider_name = (
-        "Groq (hosted)" if active == "groq" else "Ollama (local)"
-    )
+    active_provider_name = "Groq (hosted)" if active == "groq" else "Ollama (local)"
     requires_redaction = active == "groq"
-    active_model = (
-        os.environ.get("CAPSTONE_LLM_MODEL")
-        or ("llama-3.3-70b-versatile" if active == "groq" else hw.model)
+    active_model = os.environ.get("CAPSTONE_LLM_MODEL") or (
+        "llama-3.3-70b-versatile" if active == "groq" else hw.model
     )
 
     return {
@@ -242,7 +244,9 @@ def api_recommend(req: RecommendRequest) -> RecommendationResult:
     config = load_config()
     db_path = _db_path()
     if not db_path.exists():
-        raise HTTPException(503, "Course database not initialized. Run 'capstone scrape refresh'.")
+        raise HTTPException(
+            503, "Course database not initialized. Run 'capstone scrape refresh'."
+        )
 
     transcript = req.transcript
     if req.major_override:
@@ -265,7 +269,9 @@ def api_recommend(req: RecommendRequest) -> RecommendationResult:
 
 @app.get("/api/courses")
 def list_courses(
-    q: Annotated[str | None, Query(description="Search query (course_id or title)")] = None,
+    q: Annotated[
+        str | None, Query(description="Search query (course_id or title)")
+    ] = None,
     department: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
@@ -293,6 +299,7 @@ def list_courses(
 def list_majors() -> list[dict]:
     """Return the list of implemented majors for UI dropdowns."""
     from capstone.scrapers.programs import implemented_majors
+
     return implemented_majors()
 
 
@@ -312,6 +319,7 @@ def major_requirements(major: str = "CSSE") -> list[dict]:
 
 
 # ── UI ──────────────────────────────────────────────────────────────────
+
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/app", response_class=HTMLResponse)

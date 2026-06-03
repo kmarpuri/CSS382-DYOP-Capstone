@@ -93,9 +93,7 @@ class TestGenerateJson:
             out = backend.generate_json("sys", "prompt")
 
         assert out == {
-            "recommendations": [
-                {"course_id": "CSS 360", "rank": 1, "reasoning": "ok"}
-            ],
+            "recommendations": [{"course_id": "CSS 360", "rank": 1, "reasoning": "ok"}],
             "warnings": [],
         }
 
@@ -141,13 +139,19 @@ class TestRedaction:
             cumulative_gpa=3.55,
             completed=[
                 CompletedCourse(
-                    course_id="CSS 142", title="Intro", credits=5.0,
-                    grade="3.8", quarter="AUT", year=2024,
+                    course_id="CSS 142",
+                    title="Intro",
+                    credits=5.0,
+                    grade="3.8",
+                    quarter="AUT",
+                    year=2024,
                 ),
             ],
             transfer_credits=[
                 TransferCredit(
-                    course_id="CHEM 142", title="Chem", credits=5.0,
+                    course_id="CHEM 142",
+                    title="Chem",
+                    credits=5.0,
                     source="IB",
                 ),
             ],

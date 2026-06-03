@@ -29,18 +29,21 @@ from capstone.scrapers.ratemyprofessor import (
 
 
 class TestNameNormalization:
-    @pytest.mark.parametrize("raw,expected", [
-        ("John Smith", "JOHN SMITH"),
-        ("Smith, John", "JOHN SMITH"),
-        ("SMITH, JOHN", "JOHN SMITH"),
-        ("john smith", "JOHN SMITH"),
-        ("John Q. Smith", "JOHN SMITH"),
-        ("John  Smith", "JOHN SMITH"),
-        ("Smith,John", "JOHN SMITH"),
-        ("  Smith ,  John  ", "JOHN SMITH"),
-        ("O'Brien, Mary", "MARY OBRIEN"),
-        ("", ""),
-    ])
+    @pytest.mark.parametrize(
+        "raw,expected",
+        [
+            ("John Smith", "JOHN SMITH"),
+            ("Smith, John", "JOHN SMITH"),
+            ("SMITH, JOHN", "JOHN SMITH"),
+            ("john smith", "JOHN SMITH"),
+            ("John Q. Smith", "JOHN SMITH"),
+            ("John  Smith", "JOHN SMITH"),
+            ("Smith,John", "JOHN SMITH"),
+            ("  Smith ,  John  ", "JOHN SMITH"),
+            ("O'Brien, Mary", "MARY OBRIEN"),
+            ("", ""),
+        ],
+    )
     def test_normalises_common_formats(self, raw, expected):
         assert _normalize_name(raw) == expected
 
@@ -64,9 +67,7 @@ class TestCacheFreshness:
         assert _cache_is_fresh(now) is True
 
     def test_yesterday_is_fresh(self):
-        yesterday = (
-            datetime.now(timezone.utc) - timedelta(days=1)
-        ).isoformat()
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
         assert _cache_is_fresh(yesterday) is True
 
     def test_beyond_ttl_is_stale(self):
@@ -95,12 +96,32 @@ def ratings_db(tmp_path):
              would_take_again_pct, rmp_legacy_id, last_scraped
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         [
-            ("Munehiro Fukuda", "MUNEHIRO FUKUDA", "1431", "UWB",
-             "Computing & Software Systems",
-             4.5, 3.2, 42, 88.0, "987654", now),
-            ("Hazeline U. Asuncion", "HAZELINE ASUNCION", "1431", "UWB",
-             "Computing & Software Systems",
-             4.8, 2.5, 15, 95.0, "111222", now),
+            (
+                "Munehiro Fukuda",
+                "MUNEHIRO FUKUDA",
+                "1431",
+                "UWB",
+                "Computing & Software Systems",
+                4.5,
+                3.2,
+                42,
+                88.0,
+                "987654",
+                now,
+            ),
+            (
+                "Hazeline U. Asuncion",
+                "HAZELINE ASUNCION",
+                "1431",
+                "UWB",
+                "Computing & Software Systems",
+                4.8,
+                2.5,
+                15,
+                95.0,
+                "111222",
+                now,
+            ),
         ],
     )
     conn.commit()
@@ -150,10 +171,17 @@ class TestScraperPersistence:
         school_response = {
             "newSearch": {
                 "schools": {
-                    "edges": [{"node": {
-                        "id": "abc", "legacyId": 1431,
-                        "name": "Mock School", "city": "MS", "state": "WA",
-                    }}]
+                    "edges": [
+                        {
+                            "node": {
+                                "id": "abc",
+                                "legacyId": 1431,
+                                "name": "Mock School",
+                                "city": "MS",
+                                "state": "WA",
+                            }
+                        }
+                    ]
                 }
             }
         }
@@ -162,20 +190,32 @@ class TestScraperPersistence:
                 "teachers": {
                     "pageInfo": {"hasNextPage": False, "endCursor": None},
                     "edges": [
-                        {"node": {
-                            "id": "p1", "legacyId": 1001,
-                            "firstName": "Munehiro", "lastName": "Fukuda",
-                            "department": "Computing",
-                            "avgRating": 4.5, "avgDifficulty": 3.0,
-                            "numRatings": 42, "wouldTakeAgainPercent": 90.0,
-                        }},
-                        {"node": {
-                            "id": "p2", "legacyId": 1002,
-                            "firstName": "", "lastName": "",   # garbage row
-                            "department": None,
-                            "avgRating": None, "avgDifficulty": None,
-                            "numRatings": 0, "wouldTakeAgainPercent": None,
-                        }},
+                        {
+                            "node": {
+                                "id": "p1",
+                                "legacyId": 1001,
+                                "firstName": "Munehiro",
+                                "lastName": "Fukuda",
+                                "department": "Computing",
+                                "avgRating": 4.5,
+                                "avgDifficulty": 3.0,
+                                "numRatings": 42,
+                                "wouldTakeAgainPercent": 90.0,
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": "p2",
+                                "legacyId": 1002,
+                                "firstName": "",
+                                "lastName": "",  # garbage row
+                                "department": None,
+                                "avgRating": None,
+                                "avgDifficulty": None,
+                                "numRatings": 0,
+                                "wouldTakeAgainPercent": None,
+                            }
+                        },
                     ],
                 }
             }
@@ -233,12 +273,13 @@ class TestRecommenderUsesRatings:
     """The Recommender's best_instructor field should be populated when
     cached ratings + scheduled sections both exist."""
 
-    def test_best_instructor_attached_to_recommendation(
-        self, fixture_db, tmp_path
-    ):
+    def test_best_instructor_attached_to_recommendation(self, fixture_db, tmp_path):
         from capstone.config import (
-            AppConfig, CreditLimits, DatabaseConfig,
-            RankingWeights, ScraperConfig,
+            AppConfig,
+            CreditLimits,
+            DatabaseConfig,
+            RankingWeights,
+            ScraperConfig,
         )
         from capstone.recommender import Recommender
         from capstone.transcript.models import CompletedCourse, Transcript
@@ -273,16 +314,30 @@ class TestRecommenderUsesRatings:
             major="CSSE",
             class_standing="JUNIOR",
             completed=[
-                CompletedCourse(course_id=c, title=c, credits=5.0,
-                                grade="3.0", quarter="AUT", year=2024)
-                for c in ("CSS 142", "CSS 143", "STMATH 124", "STMATH 125",
-                          "CSS 342", "CSS 343", "CSS 301")
+                CompletedCourse(
+                    course_id=c,
+                    title=c,
+                    credits=5.0,
+                    grade="3.0",
+                    quarter="AUT",
+                    year=2024,
+                )
+                for c in (
+                    "CSS 142",
+                    "CSS 143",
+                    "STMATH 124",
+                    "STMATH 125",
+                    "CSS 342",
+                    "CSS 343",
+                    "CSS 301",
+                )
             ],
         )
 
         rec = Recommender(fixture_db, config)
-        result = rec.recommend(transcript, target_quarter="WIN",
-                               top_n=10, use_llm=False)
+        result = rec.recommend(
+            transcript, target_quarter="WIN", top_n=10, use_llm=False
+        )
 
         css_360 = next(
             (r for r in result.recommendations if r.course_id == "CSS 360"),

@@ -45,12 +45,21 @@ class ChemistryBSProgramScraper(ProgramScraper):
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("B CHEM 238", ["B CHEM 237"],
-         "OChem II picks up where I leaves off — mechanisms expand to more functional groups."),
-        ("B CHEM 456", ["B CHEM 455"],
-         "PChem II's quantum applications need PChem I's thermodynamics framework."),
-        ("B CHEM 460", ["B CHEM 239"],
-         "Biochem mechanisms presume comfort with OChem III's carbonyl chemistry."),
+        (
+            "B CHEM 238",
+            ["B CHEM 237"],
+            "OChem II picks up where I leaves off — mechanisms expand to more functional groups.",
+        ),
+        (
+            "B CHEM 456",
+            ["B CHEM 455"],
+            "PChem II's quantum applications need PChem I's thermodynamics framework.",
+        ),
+        (
+            "B CHEM 460",
+            ["B CHEM 239"],
+            "Biochem mechanisms presume comfort with OChem III's carbonyl chemistry.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -60,7 +69,9 @@ class ChemistryBSProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "general_chem", GENERAL_CHEM)
         count += self._insert_each(conn, "organic", ORGANIC_CHEM)
         count += self._insert_each(conn, "organic_lab", ORGANIC_LAB)
-        count += self._insert_each(conn, "physical_chem", [*PHYSICAL_CHEM, PHYSICAL_CHEM_LAB])
+        count += self._insert_each(
+            conn, "physical_chem", [*PHYSICAL_CHEM, PHYSICAL_CHEM_LAB]
+        )
         self._insert_req(conn, "inorganic", INORGANIC)
         count += 1
         self._insert_req(conn, "biochem", BIOCHEM)
@@ -69,8 +80,13 @@ class ChemistryBSProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "math", self.MATH_PREREQS)
         count += self._insert_each(conn, "science", self.SCIENCE_PREREQS)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
-        self._insert_req(conn, "elective", "B CHEM 400+", required_count=10,
-                         notes="10 credits of upper-division chemistry electives")
+        self._insert_req(
+            conn,
+            "elective",
+            "B CHEM 400+",
+            required_count=10,
+            notes="10 credits of upper-division chemistry electives",
+        )
         count += 1
         synergy_count = self.seed_synergies(conn)
         self._record_scrape_metadata(conn, timestamp=now, record_count=count)
@@ -88,21 +104,30 @@ class ChemistryBSBiochemProgramScraper(ProgramScraper):
 
     CAPSTONE = ["B CHEM 499"]
     BIOCHEM_DEPTH = [
-        "B CHEM 460",   # Biochemistry I
-        "B CHEM 461",   # Biochemistry II
-        "B CHEM 462",   # Biochemistry III / experimental
+        "B CHEM 460",  # Biochemistry I
+        "B CHEM 461",  # Biochemistry II
+        "B CHEM 462",  # Biochemistry III / experimental
     ]
     MATH_PREREQS = ["STMATH 124", "STMATH 125", "STMATH 126"]
     SCIENCE_PREREQS = ["B PHYS 121", "B PHYS 122"]
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("B CHEM 461", ["B CHEM 460"],
-         "Biochem II extends Biochem I's metabolism + enzymology core."),
-        ("B CHEM 460", ["B CHEM 239"],
-         "Biochem mechanisms presume comfort with OChem III's carbonyl chemistry."),
-        ("B CHEM 462", ["B CHEM 461"],
-         "Biochem III usually targets molecular biology applications building on I+II."),
+        (
+            "B CHEM 461",
+            ["B CHEM 460"],
+            "Biochem II extends Biochem I's metabolism + enzymology core.",
+        ),
+        (
+            "B CHEM 460",
+            ["B CHEM 239"],
+            "Biochem mechanisms presume comfort with OChem III's carbonyl chemistry.",
+        ),
+        (
+            "B CHEM 462",
+            ["B CHEM 461"],
+            "Biochem III usually targets molecular biology applications building on I+II.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -113,7 +138,7 @@ class ChemistryBSBiochemProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "organic", ORGANIC_CHEM)
         count += self._insert_each(conn, "organic_lab", ORGANIC_LAB)
         self._insert_req(conn, "physical_chem", PHYSICAL_CHEM[0])
-        count += 1   # Only PChem I in this option
+        count += 1  # Only PChem I in this option
         self._insert_req(conn, "inorganic", INORGANIC)
         count += 1
         count += self._insert_each(conn, "biochemistry", self.BIOCHEM_DEPTH)
@@ -122,13 +147,20 @@ class ChemistryBSBiochemProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "math", self.MATH_PREREQS)
         count += self._insert_each(conn, "science", self.SCIENCE_PREREQS)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
-        self._insert_req(conn, "elective", "B CHEM 400+", required_count=5,
-                         notes="5 credits of upper-division chemistry electives")
+        self._insert_req(
+            conn,
+            "elective",
+            "B CHEM 400+",
+            required_count=5,
+            notes="5 credits of upper-division chemistry electives",
+        )
         count += 1
         synergy_count = self.seed_synergies(conn)
         self._record_scrape_metadata(conn, timestamp=now, record_count=count)
         conn.commit()
-        logger.info(f"Inserted {count} CHEMBIO requirements + {synergy_count} synergies")
+        logger.info(
+            f"Inserted {count} CHEMBIO requirements + {synergy_count} synergies"
+        )
         return count
 
 
@@ -147,8 +179,7 @@ class ChemistryBAProgramScraper(ProgramScraper):
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("B CHEM 238", ["B CHEM 237"],
-         "OChem II picks up directly from OChem I."),
+        ("B CHEM 238", ["B CHEM 237"], "OChem II picks up directly from OChem I."),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -166,8 +197,13 @@ class ChemistryBAProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "math", self.MATH_PREREQS)
         count += self._insert_each(conn, "science", self.SCIENCE_PREREQS)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
-        self._insert_req(conn, "elective", "B CHEM 300+", required_count=15,
-                         notes="15 credits of chemistry electives")
+        self._insert_req(
+            conn,
+            "elective",
+            "B CHEM 300+",
+            required_count=15,
+            notes="15 credits of chemistry electives",
+        )
         count += 1
         synergy_count = self.seed_synergies(conn)
         self._record_scrape_metadata(conn, timestamp=now, record_count=count)

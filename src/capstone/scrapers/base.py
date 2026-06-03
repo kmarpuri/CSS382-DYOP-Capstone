@@ -121,8 +121,8 @@ class ProgramScraper(ABC):
     no other module needs to know which major it's working with.
     """
 
-    major_code: str = ""    # e.g., "CSSE"
-    major_name: str = ""    # e.g., "Computer Science & Software Engineering"
+    major_code: str = ""  # e.g., "CSSE"
+    major_name: str = ""  # e.g., "Computer Science & Software Engineering"
 
     # Per-major pedagogical synergies. Each tuple is
     #   (downstream_course_id, [upstream_course_ids], short_rationale)
@@ -167,8 +167,7 @@ class ProgramScraper(ABC):
                 (major, category, course_id, required_count, group_id, notes)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (self.major_code, category, course_id,
-             required_count, group_id, notes),
+            (self.major_code, category, course_id, required_count, group_id, notes),
         )
 
     def _insert_each(
@@ -196,8 +195,12 @@ class ProgramScraper(ABC):
         """Insert an OR-group: student must complete any one of these."""
         for cid in course_ids:
             self._insert_req(
-                conn, category, cid,
-                required_count=1, group_id=group_id, notes=notes,
+                conn,
+                category,
+                cid,
+                required_count=1,
+                group_id=group_id,
+                notes=notes,
             )
         return len(course_ids)
 
@@ -231,9 +234,12 @@ class ProgramScraper(ABC):
         """
         inserted = 0
         for downstream, upstreams, _rationale in self.synergies:
-            if conn.execute(
-                "SELECT 1 FROM courses WHERE course_id = ?", (downstream,)
-            ).fetchone() is None:
+            if (
+                conn.execute(
+                    "SELECT 1 FROM courses WHERE course_id = ?", (downstream,)
+                ).fetchone()
+                is None
+            ):
                 continue
 
             for upstream in upstreams:

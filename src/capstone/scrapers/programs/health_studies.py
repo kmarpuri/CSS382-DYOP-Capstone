@@ -22,26 +22,35 @@ class HealthStudiesProgramScraper(ProgramScraper):
     major_name = "Health Studies (B.A.)"
 
     CORE = [
-        "BHS 201",   # Intro to Public Health
-        "BHS 301",   # Health & Society
-        "BHS 310",   # Health Inequities
-        "BHS 311",   # Epidemiology
-        "BHS 312",   # Biostatistics for Health Sciences
-        "BHS 333",   # Environmental Health
-        "BHS 365",   # Global Health
-        "BHS 414",   # Health Policy
+        "BHS 201",  # Intro to Public Health
+        "BHS 301",  # Health & Society
+        "BHS 310",  # Health Inequities
+        "BHS 311",  # Epidemiology
+        "BHS 312",  # Biostatistics for Health Sciences
+        "BHS 333",  # Environmental Health
+        "BHS 365",  # Global Health
+        "BHS 414",  # Health Policy
     ]
     CAPSTONE = ["BHS 499"]
     SCIENCE_PREREQS = ["B BIO 180"]
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("BHS 311", ["BHS 312"],
-         "Epidemiology methods rest on the biostatistics foundation."),
-        ("BHS 414", ["BHS 310"],
-         "Health Policy debates are most accessible after Health Inequities frames the structural drivers."),
-        ("BHS 365", ["BHS 301"],
-         "Global Health expands the social-determinants framework Health & Society introduces."),
+        (
+            "BHS 311",
+            ["BHS 312"],
+            "Epidemiology methods rest on the biostatistics foundation.",
+        ),
+        (
+            "BHS 414",
+            ["BHS 310"],
+            "Health Policy debates are most accessible after Health Inequities frames the structural drivers.",
+        ),
+        (
+            "BHS 365",
+            ["BHS 301"],
+            "Global Health expands the social-determinants framework Health & Society introduces.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -52,8 +61,13 @@ class HealthStudiesProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "science", self.SCIENCE_PREREQS)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
-        self._insert_req(conn, "elective", "BHS 300+", required_count=20,
-                         notes="20 credits of upper-division BHS electives")
+        self._insert_req(
+            conn,
+            "elective",
+            "BHS 300+",
+            required_count=20,
+            notes="20 credits of upper-division BHS electives",
+        )
         count += 1
         synergy_count = self.seed_synergies(conn)
         self._record_scrape_metadata(conn, timestamp=now, record_count=count)

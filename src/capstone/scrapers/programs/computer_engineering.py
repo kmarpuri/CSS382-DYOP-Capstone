@@ -35,10 +35,10 @@ class ComputerEngineeringProgramScraper(ProgramScraper):
 
     # Software-side core
     CS_CORE = [
-        "CSS 342",   # Data Structures, Algorithms, and Discrete Math I
-        "CSS 343",   # Data Structures, Algorithms, and Discrete Math II
-        "CSS 422",   # Hardware and Computer Organization
-        "CSS 430",   # Operating Systems
+        "CSS 342",  # Data Structures, Algorithms, and Discrete Math I
+        "CSS 343",  # Data Structures, Algorithms, and Discrete Math II
+        "CSS 422",  # Hardware and Computer Organization
+        "CSS 430",  # Operating Systems
     ]
 
     # Hardware-side core
@@ -59,29 +59,51 @@ class ComputerEngineeringProgramScraper(ProgramScraper):
 
     # Math + physics prerequisites
     MATH = [
-        "STMATH 124", "STMATH 125", "STMATH 126", "STMATH 207", "STMATH 208",
+        "STMATH 124",
+        "STMATH 125",
+        "STMATH 126",
+        "STMATH 207",
+        "STMATH 208",
     ]
-    PHYSICS = ["B PHYS 121", "B PHYS 122"]   # may not be in catalog; seed_synergies skips missing
+    PHYSICS = [
+        "B PHYS 121",
+        "B PHYS 122",
+    ]  # may not be in catalog; seed_synergies skips missing
 
     # Writing
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("B EE 425", ["B EE 271"],
-         "Microprocessor System Design assumes the digital-logic vocabulary "
-         "(flip-flops, FSMs) built up in Digital Circuits."),
-        ("B EE 427", ["B EE 271"],
-         "HDL design tools formalize what you sketched on paper in Digital "
-         "Circuits and Systems."),
-        ("CSS 430", ["CSS 422"],
-         "Hardware and Computer Organization gives you the assembly + memory "
-         "model that makes Operating Systems concrete."),
-        ("B CE 495", ["B EE 425", "CSS 422"],
-         "The CE capstone bridges the hardware and software stacks — "
-         "having microprocessor design AND hardware organization on board "
-         "makes the integration story tractable."),
-        ("B CE 496", ["B CE 495"],
-         "Capstone II is the build-out of the design defended in I."),
+        (
+            "B EE 425",
+            ["B EE 271"],
+            "Microprocessor System Design assumes the digital-logic vocabulary "
+            "(flip-flops, FSMs) built up in Digital Circuits.",
+        ),
+        (
+            "B EE 427",
+            ["B EE 271"],
+            "HDL design tools formalize what you sketched on paper in Digital "
+            "Circuits and Systems.",
+        ),
+        (
+            "CSS 430",
+            ["CSS 422"],
+            "Hardware and Computer Organization gives you the assembly + memory "
+            "model that makes Operating Systems concrete.",
+        ),
+        (
+            "B CE 495",
+            ["B EE 425", "CSS 422"],
+            "The CE capstone bridges the hardware and software stacks — "
+            "having microprocessor design AND hardware organization on board "
+            "makes the integration story tractable.",
+        ),
+        (
+            "B CE 496",
+            ["B CE 495"],
+            "Capstone II is the build-out of the design defended in I.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -98,7 +120,9 @@ class ComputerEngineeringProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "physics", self.PHYSICS)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
         self._insert_req(
-            conn, "elective", "B EE 300+ / CSS 300+",
+            conn,
+            "elective",
+            "B EE 300+ / CSS 300+",
             required_count=15,
             notes="15 credits of upper-division CSS or B EE electives",
         )

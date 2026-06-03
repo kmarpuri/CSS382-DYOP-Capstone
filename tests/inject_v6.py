@@ -4,16 +4,26 @@ with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 
 # Get the base64 of the two images
-with open("/Users/kaustubhsri/.gemini/antigravity-ide/brain/05f1ed5e-f0aa-4e23-8030-7c09b585b8dc/landing_hero_bento_1780374969395.png", "rb") as f:
+with open(
+    "/Users/kaustubhsri/.gemini/antigravity-ide/brain/05f1ed5e-f0aa-4e23-8030-7c09b585b8dc/landing_hero_bento_1780374969395.png",
+    "rb",
+) as f:
     bento_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
 
-with open("/Users/kaustubhsri/.gemini/antigravity-ide/brain/05f1ed5e-f0aa-4e23-8030-7c09b585b8dc/ai_nodes_1780374987741.png", "rb") as f:
+with open(
+    "/Users/kaustubhsri/.gemini/antigravity-ide/brain/05f1ed5e-f0aa-4e23-8030-7c09b585b8dc/ai_nodes_1780374987741.png",
+    "rb",
+) as f:
     nodes_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
 
-css_start = text.find('/* ── Native Theme Landing Page Styles ──────────────────────────── */')
-css_end = text.find('</style>')
+css_start = text.find(
+    "/* ── Native Theme Landing Page Styles ──────────────────────────── */"
+)
+css_end = text.find("</style>")
 body_start = text.find('<div id="landing-page"')
-body_end = text.find('<div id="app-container"') + len('<div id="app-container" style="display: none;">')
+body_end = text.find('<div id="app-container"') + len(
+    '<div id="app-container" style="display: none;">'
+)
 
 v6_css = """
   /* ── Native Theme Premium Landing Page Styles ──────────────────────────── */
@@ -276,7 +286,15 @@ v6_html = f"""
 <div id="app-container" style="display: none;">
 """
 
-new_text = text[:css_start] + v6_css + "\n" + text[css_end:body_start] + v6_html + "\n" + text[body_end:]
+new_text = (
+    text[:css_start]
+    + v6_css
+    + "\n"
+    + text[css_end:body_start]
+    + v6_html
+    + "\n"
+    + text[body_end:]
+)
 
 with open("src/capstone/ui/index.html", "w") as f:
     f.write(new_text)
