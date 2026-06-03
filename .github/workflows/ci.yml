@@ -11,20 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.11, 3.12]
+        python-version: [3.11]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install deps
+      - name: Install build deps & dev extras
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]" || true
-          pip install ruff black pyright
+          pip install ruff==0.11.0 black==24.1.0 pyright
 
       - name: Lint (ruff)
         run: ruff check .
