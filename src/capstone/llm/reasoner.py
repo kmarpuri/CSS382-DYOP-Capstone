@@ -179,6 +179,13 @@ class LLMReasoner:
         target_quarter: str | None,
         user_prompt: str = "",
     ) -> str:
+        """Assemble the JSON payload the LLM sees as its user message.
+
+        Includes the student's academic profile (last 15 completed courses,
+        in-progress list, GPA, major), the candidate table with per-course
+        score breakdowns and scheduled section details, the pedagogical
+        synergies map, and the user's free-form constraint string.
+        """
         completed_summary = [
             {
                 "course_id": c.course_id,
@@ -345,6 +352,13 @@ class LLMReasoner:
         response: dict[str, Any],
         candidates: list[CourseScore],
     ) -> tuple[list[CourseScore], list[str]]:
+        """Validate and reconcile the LLM's JSON output against the candidate list.
+
+        Checks that every ``course_id`` the LLM returns actually exists in
+        the candidate set (not hallucinated), deduplicates, attaches the
+        LLM's ``reasoning`` text to each CourseScore, and appends any
+        candidates the LLM omitted so no eligible course is silently dropped.
+        """
         warnings: list[str] = []
         candidate_by_id = {c.course_id: c for c in candidates}
 
