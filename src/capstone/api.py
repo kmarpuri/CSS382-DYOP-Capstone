@@ -119,6 +119,7 @@ app = FastAPI(
 
 
 def _db_path() -> Path:
+    """Resolve the SQLite database path from config (respects CAPSTONE_DB env var)."""
     config = load_config()
     return config.database.resolve_path(PROJECT_ROOT)
 
@@ -144,6 +145,7 @@ class RecommendRequest(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict:
+    """Lightweight liveness check — reports DB existence and path."""
     p = _db_path()
     return {
         "status": "ok",
@@ -154,6 +156,7 @@ def health() -> dict:
 
 @app.get("/api/hardware")
 def hardware() -> dict:
+    """Return the auto-detected hardware tier and recommended LLM model."""
     from capstone.llm.hardware import detect_hardware_tier
 
     tier = detect_hardware_tier()
@@ -223,6 +226,12 @@ def llm_status() -> dict:
 
 @app.post("/api/parse-transcript")
 async def api_parse_transcript(file: UploadFile = File(...)) -> Transcript:
+    """Accept a PDF upload, extract the transcript, and return structured JSON.
+
+    The PDF is written to a temporary file (auto-deleted) so the parser
+    can use file-based PDF libraries (pdfplumber, pdfminer).  The parsed
+    ``Transcript`` Pydantic model is returned directly as the response.
+    """
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Expected a PDF file")
 
@@ -241,6 +250,12 @@ async def api_parse_transcript(file: UploadFile = File(...)) -> Transcript:
 
 @app.post("/api/recommend")
 def api_recommend(req: RecommendRequest) -> RecommendationResult:
+    """Run the full recommendation pipeline and return a ranked course plan.
+
+    Accepts the parsed transcript, target quarter, credit load, and
+    optional LLM toggle.  Returns ranked recommendations with scores,
+    meeting times, and instructor ratings.
+    """
     config = load_config()
     db_path = _db_path()
     if not db_path.exists():
@@ -275,6 +290,7 @@ def list_courses(
     department: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
+    """Search the course catalog with optional keyword and department filters."""
     db_path = _db_path()
     if not db_path.exists():
         raise HTTPException(503, "Course database not initialized.")
@@ -305,6 +321,7 @@ def list_majors() -> list[dict]:
 
 @app.get("/api/major-requirements")
 def major_requirements(major: str = "CSSE") -> list[dict]:
+    """Return the degree requirements for a given major code."""
     db_path = _db_path()
     if not db_path.exists():
         raise HTTPException(503, "Course database not initialized.")

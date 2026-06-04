@@ -40,6 +40,10 @@ OLLAMA_DOWNLOAD_URL = "https://ollama.com/download"
 
 
 def _marker_path() -> Path:
+    """Return the path to the first-run completion marker file.
+
+    Uses ``platformdirs`` when available, falling back to ``~/.capstone/``.
+    """
     try:
         from platformdirs import user_data_dir
 
@@ -50,12 +54,14 @@ def _marker_path() -> Path:
 
 
 def _mark_done() -> None:
+    """Write the first-run marker so the wizard is not shown again."""
     p = _marker_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(time.strftime("%Y-%m-%dT%H:%M:%S%z\n"))
 
 
 def is_first_run() -> bool:
+    """Return True if the first-run setup wizard has never completed."""
     return not _marker_path().exists()
 
 
@@ -63,6 +69,7 @@ def is_first_run() -> bool:
 
 
 def ollama_binary_present() -> bool:
+    """Return True if the ``ollama`` binary is on the system PATH."""
     return shutil.which("ollama") is not None
 
 
