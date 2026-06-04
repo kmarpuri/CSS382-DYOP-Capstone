@@ -25,7 +25,6 @@ import os
 import platform
 import shutil
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -39,9 +38,11 @@ OLLAMA_DOWNLOAD_URL = "https://ollama.com/download"
 
 # ── Marker file ─────────────────────────────────────────────────────────
 
+
 def _marker_path() -> Path:
     try:
         from platformdirs import user_data_dir
+
         base = Path(user_data_dir("capstone", appauthor=False))
     except ImportError:
         base = Path.home() / ".capstone"
@@ -59,6 +60,7 @@ def is_first_run() -> bool:
 
 
 # ── Detection ───────────────────────────────────────────────────────────
+
 
 def ollama_binary_present() -> bool:
     return shutil.which("ollama") is not None
@@ -82,6 +84,7 @@ def installed_models(host: str | None = None) -> list[str]:
     """List names of chat-capable models installed in Ollama (skipping embeddings)."""
     try:
         import ollama
+
         client = ollama.Client(host=host) if host else ollama
         data = client.list()
     except Exception:
@@ -95,7 +98,11 @@ def installed_models(host: str | None = None) -> list[str]:
         name = (
             getattr(entry, "model", None)
             or getattr(entry, "name", None)
-            or (entry.get("model") or entry.get("name") if isinstance(entry, dict) else None)
+            or (
+                entry.get("model") or entry.get("name")
+                if isinstance(entry, dict)
+                else None
+            )
         )
         if not name:
             continue
@@ -107,6 +114,7 @@ def installed_models(host: str | None = None) -> list[str]:
 
 # ── Install Ollama ──────────────────────────────────────────────────────
 
+
 def install_ollama(*, ask: bool = True, console=None) -> bool:
     """Best-effort cross-platform install of the Ollama binary.
 
@@ -114,6 +122,7 @@ def install_ollama(*, ask: bool = True, console=None) -> bool:
     page in a browser — automation isn't safe there.
     """
     from rich.console import Console
+
     console = console or Console()
 
     if ollama_binary_present():
@@ -135,8 +144,10 @@ def install_ollama(*, ask: bool = True, console=None) -> bool:
     elif system == "Windows":
         method, command = "browser", OLLAMA_DOWNLOAD_URL + "/windows"
     else:
-        console.print(f"[red]Unsupported platform {system!r}.[/red] "
-                      f"Install Ollama manually from {OLLAMA_DOWNLOAD_URL}.")
+        console.print(
+            f"[red]Unsupported platform {system!r}.[/red] "
+            f"Install Ollama manually from {OLLAMA_DOWNLOAD_URL}."
+        )
         return False
 
     console.print(f"  Install method: [bold]{method}[/bold]")
@@ -152,6 +163,7 @@ def install_ollama(*, ask: bool = True, console=None) -> bool:
 
     if method == "browser":
         import webbrowser
+
         webbrowser.open(command)
         console.print(
             "[yellow]Opened the Ollama download page in your browser. "
@@ -179,7 +191,9 @@ def _run_shell_install(command: str, console) -> bool:
         return False
 
     if result.returncode != 0:
-        console.print(f"[red]Install command failed with exit code {result.returncode}.[/red]")
+        console.print(
+            f"[red]Install command failed with exit code {result.returncode}.[/red]"
+        )
         console.print(
             f"You can install Ollama manually from {OLLAMA_DOWNLOAD_URL}, "
             f"then re-run [bold]capstone setup[/bold]."
@@ -200,9 +214,11 @@ def _run_shell_install(command: str, console) -> bool:
 
 # ── Start the daemon ───────────────────────────────────────────────────
 
+
 def start_ollama_daemon(console=None, *, wait_seconds: float = 5.0) -> bool:
     """Spawn ``ollama serve`` if the daemon isn't already running."""
     from rich.console import Console
+
     console = console or Console()
 
     if ollama_daemon_running():
@@ -240,6 +256,7 @@ def start_ollama_daemon(console=None, *, wait_seconds: float = 5.0) -> bool:
 
 # ── Pull a model ───────────────────────────────────────────────────────
 
+
 def pull_model(
     model: str,
     *,
@@ -252,6 +269,7 @@ def pull_model(
     Returns True if the model is available afterwards.
     """
     from rich.console import Console
+
     console = console or Console()
 
     if model in installed_models(host=host):
@@ -273,6 +291,7 @@ def pull_model(
             Progress,
             TextColumn,
             TimeRemainingColumn,
+            TaskID,
         )
     except ImportError as e:
         console.print(f"[red]ollama Python client missing: {e}[/red]")
@@ -290,7 +309,7 @@ def pull_model(
         transient=False,
     )
 
-    tasks: dict[str, int] = {}
+    tasks: dict[str, TaskID] = {}
     try:
         with progress:
             for chunk in client.pull(model, stream=True):
@@ -319,11 +338,16 @@ def pull_model(
                 key = digest or status or "main"
                 if key not in tasks and total:
                     tasks[key] = progress.add_task(
-                        "download", total=total, status=status,
+                        "download",
+                        total=total,
+                        status=status,
                     )
                 if key in tasks and total:
                     progress.update(
-                        tasks[key], completed=completed, total=total, status=status,
+                        tasks[key],
+                        completed=completed,
+                        total=total,
+                        status=status,
                     )
     except Exception as e:
         console.print(f"[red]Pull failed: {e}[/red]")
@@ -337,6 +361,7 @@ def pull_model(
 
 
 # ── Top-level entry point ──────────────────────────────────────────────
+
 
 def run_first_run_setup(
     *,

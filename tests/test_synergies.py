@@ -27,8 +27,12 @@ def _transcript(completed: list[tuple[str, str]]) -> Transcript:
         class_standing="JUNIOR",
         completed=[
             CompletedCourse(
-                course_id=cid, title=cid, credits=5.0,
-                grade=grade, quarter="AUT", year=2024,
+                course_id=cid,
+                title=cid,
+                credits=5.0,
+                grade=grade,
+                quarter="AUT",
+                year=2024,
             )
             for cid, grade in completed
         ],
@@ -40,8 +44,11 @@ def _default_config(synergy_weight: float = 0.20) -> AppConfig:
         scraper=ScraperConfig(),
         database=DatabaseConfig(),
         ranking_weights=RankingWeights(
-            criticality=0.30, availability=0.20, progress=0.30,
-            synergy=synergy_weight, balance_penalty=0.10,
+            criticality=0.30,
+            availability=0.20,
+            progress=0.30,
+            synergy=synergy_weight,
+            balance_penalty=0.10,
         ),
         credit_limits=CreditLimits(default=15, hard_ceiling=25),
     )
@@ -68,10 +75,17 @@ class TestSynergyScore:
     def test_zero_when_no_prep_done(self, fixture_db):
         """Student has CSS 343 only — none of the soft prereqs for 430."""
         config = _default_config()
-        transcript = _transcript([("CSS 142", "3.8"), ("CSS 143", "3.0"),
-                                  ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-                                  ("CSS 342", "3.2"), ("CSS 343", "3.5"),
-                                  ("CSS 301", "3.0")])
+        transcript = _transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 343", "3.5"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
         ranker = Ranker(fixture_db, config)
         scores = {s.course_id: s for s in ranker.score_all(transcript)}
@@ -83,10 +97,18 @@ class TestSynergyScore:
         """Student took CSS 422 — CSS 430's soft prereq is satisfied,
         so synergy_score is 1.0."""
         config = _default_config()
-        transcript = _transcript([("CSS 142", "3.8"), ("CSS 143", "3.0"),
-                                  ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-                                  ("CSS 342", "3.2"), ("CSS 343", "3.5"),
-                                  ("CSS 301", "3.0"), ("CSS 422", "3.4")])
+        transcript = _transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 343", "3.5"),
+                ("CSS 301", "3.0"),
+                ("CSS 422", "3.4"),
+            ]
+        )
 
         ranker = Ranker(fixture_db, config)
         scores = {s.course_id: s for s in ranker.score_all(transcript)}
@@ -99,14 +121,23 @@ class TestSynergyScore:
         # Heavy synergy weight to make the effect dominant
         config = _default_config(synergy_weight=0.50)
         # Student has CSS 422 → synergy on CSS 430 is 1.0
-        transcript = _transcript([("CSS 142", "3.8"), ("CSS 143", "3.0"),
-                                  ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-                                  ("CSS 342", "3.2"), ("CSS 343", "3.5"),
-                                  ("CSS 301", "3.0"), ("CSS 422", "3.4")])
+        transcript = _transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 343", "3.5"),
+                ("CSS 301", "3.0"),
+                ("CSS 422", "3.4"),
+            ]
+        )
 
         rec = Recommender(fixture_db, config)
-        result = rec.recommend(transcript, target_quarter="WIN", top_n=10,
-                               use_llm=False)
+        result = rec.recommend(
+            transcript, target_quarter="WIN", top_n=10, use_llm=False
+        )
         ids = [r.course_id for r in result.recommendations]
         # CSS 430 should be in the top 2 thanks to the synergy bonus
         assert "CSS 430" in ids[:2], f"CSS 430 not in top 2, got {ids}"
@@ -118,10 +149,12 @@ class TestMajorAgnosticDispatch:
 
     def test_unknown_major_returns_empty(self):
         from capstone.scrapers.programs.synergies import synergy_map
+
         assert synergy_map("UNKNOWN_MAJOR") == {}
 
     def test_csse_synergies_via_dispatcher(self):
         from capstone.scrapers.programs.synergies import synergy_map
+
         m = synergy_map("CSSE")
         assert "CSS 430" in m
         # Each entry is a list of (upstream, rationale)
@@ -158,14 +191,22 @@ class TestRecommendationOutput:
         """The Recommendation object should expose which soft prereqs are
         done vs. missing so the UI can render them."""
         config = _default_config()
-        transcript = _transcript([("CSS 142", "3.8"), ("CSS 143", "3.0"),
-                                  ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-                                  ("CSS 342", "3.2"), ("CSS 343", "3.5"),
-                                  ("CSS 301", "3.0")])
+        transcript = _transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 343", "3.5"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
         rec = Recommender(fixture_db, config)
-        result = rec.recommend(transcript, target_quarter="WIN", top_n=10,
-                               use_llm=False)
+        result = rec.recommend(
+            transcript, target_quarter="WIN", top_n=10, use_llm=False
+        )
         by_id = {r.course_id: r for r in result.recommendations}
         css_430 = by_id["CSS 430"]
         # Student doesn't have CSS 422 yet

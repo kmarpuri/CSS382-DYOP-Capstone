@@ -1,12 +1,14 @@
-import os
-
 with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 
-css_start = text.find('/* ── Premium Apple Landing Page Styles ──────────────────────────── */')
-css_end = text.find('</style>')
+css_start = text.find(
+    "/* ── Premium Apple Landing Page Styles ──────────────────────────── */"
+)
+css_end = text.find("</style>")
 body_start = text.find('<div id="landing-page"')
-body_end = text.find('<div id="app-container"') + len('<div id="app-container" style="display: none;">')
+body_end = text.find('<div id="app-container"') + len(
+    '<div id="app-container" style="display: none;">'
+)
 
 clean_css = """
   /* ── Clean Landing Page Styles ──────────────────────────── */
@@ -189,7 +191,15 @@ clean_html = """
 <div id="app-container" style="display: none;">
 """
 
-new_text = text[:css_start] + clean_css + "\n" + text[css_end:body_start] + clean_html + "\n" + text[body_end:]
+new_text = (
+    text[:css_start]
+    + clean_css
+    + "\n"
+    + text[css_end:body_start]
+    + clean_html
+    + "\n"
+    + text[body_end:]
+)
 
 with open("src/capstone/ui/index.html", "w") as f:
     f.write(new_text)

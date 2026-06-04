@@ -1,5 +1,3 @@
-import os
-
 with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 
@@ -8,8 +6,12 @@ with open("src/capstone/ui/index.html", "r") as f:
 # Let's search for '<div id="landing-page"' and '</style>'
 import re
 
-css_start_match = re.search(r'/\* ── .*?Landing Page Styles ──────────────────────────── \*/', text)
-css_end_match = re.search(r'</style>', text[css_start_match.start() if css_start_match else 0:])
+css_start_match = re.search(
+    r"/\* ── .*?Landing Page Styles ──────────────────────────── \*/", text
+)
+css_end_match = re.search(
+    r"</style>", text[css_start_match.start() if css_start_match else 0 :]
+)
 if css_start_match and css_end_match:
     css_start = css_start_match.start()
     css_end = css_start_match.start() + css_end_match.start()
@@ -207,7 +209,15 @@ apple_html = """
 <div id="app-container" style="display: none;">
 """
 
-new_text = text[:css_start] + apple_css + "\n" + text[css_end:body_start] + apple_html + "\n" + text[body_end:]
+new_text = (
+    text[:css_start]
+    + apple_css
+    + "\n"
+    + text[css_end:body_start]
+    + apple_html
+    + "\n"
+    + text[body_end:]
+)
 
 with open("src/capstone/ui/index.html", "w") as f:
     f.write(new_text)

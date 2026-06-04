@@ -3,9 +3,6 @@
 Uses fixture HTML instead of live requests to test parsing in isolation.
 """
 
-import sqlite3
-import re
-
 import pytest
 
 from capstone.db.connection import connect
@@ -104,7 +101,9 @@ class TestCatalogParsing:
         )
 
         titles = {c["course_id"]: c["title"] for c in courses}
-        assert "Data Structures, Algorithms, and Discrete Mathematics I" in titles.get("CSS 342", "")
+        assert "Data Structures, Algorithms, and Discrete Mathematics I" in titles.get(
+            "CSS 342", ""
+        )
         assert "Operating Systems" in titles.get("CSS 430", "")
 
     def test_credits_extraction(self, scraper):
@@ -197,18 +196,14 @@ class TestCatalogPersistence:
             text, "CSS", "css", "2026-05-18T00:00:00"
         )
 
-        count = scraper._persist_courses(
-            db_conn, courses, "css", "2026-05-18T00:00:00"
-        )
+        count = scraper._persist_courses(db_conn, courses, "css", "2026-05-18T00:00:00")
 
         assert count >= 4
 
         cur = db_conn.execute("SELECT count(*) FROM courses")
         assert cur.fetchone()[0] >= 4
 
-        cur = db_conn.execute(
-            "SELECT * FROM courses WHERE course_id = 'CSS 343'"
-        )
+        cur = db_conn.execute("SELECT * FROM courses WHERE course_id = 'CSS 343'")
         row = cur.fetchone()
         assert row is not None
         assert "Data Structures" in row["title"]
@@ -223,9 +218,7 @@ class TestCatalogPersistence:
         )
         scraper._persist_courses(db_conn, courses, "css", "2026-05-18T00:00:00")
 
-        cur = db_conn.execute(
-            "SELECT * FROM prerequisites WHERE course_id = 'CSS 430'"
-        )
+        cur = db_conn.execute("SELECT * FROM prerequisites WHERE course_id = 'CSS 430'")
         rows = cur.fetchall()
         prereq_ids = {row["prereq_id"] for row in rows}
         assert "CSS 343" in prereq_ids

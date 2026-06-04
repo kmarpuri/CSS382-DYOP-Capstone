@@ -21,9 +21,7 @@ class ScraperConfig:
     user_agent: str = "Capstone/1.0 (UWB Course Advisor)"
     stale_after_days: int = 30
     bothell_departments: list[str] = field(default_factory=lambda: ["css"])
-    time_schedule_quarters: list[str] = field(
-        default_factory=lambda: ["AUT2026"]
-    )
+    time_schedule_quarters: list[str] = field(default_factory=lambda: ["AUT2026"])
 
 
 @dataclass
@@ -114,22 +112,34 @@ def load_config(config_path: Path | None = None) -> AppConfig:
     limits_raw = raw.get("credit_limits", {})
 
     return AppConfig(
-        scraper=ScraperConfig(**{
-            k: v for k, v in scraper_raw.items()
-            if k in ScraperConfig.__dataclass_fields__
-        }),
-        database=DatabaseConfig(**{
-            k: v for k, v in db_raw.items()
-            if k in DatabaseConfig.__dataclass_fields__
-        }),
-        ranking_weights=RankingWeights(**{
-            k: v for k, v in weights_raw.items()
-            if k in RankingWeights.__dataclass_fields__
-        }),
-        credit_limits=CreditLimits(**{
-            k: v for k, v in limits_raw.items()
-            if k in CreditLimits.__dataclass_fields__
-        }),
+        scraper=ScraperConfig(
+            **{
+                k: v
+                for k, v in scraper_raw.items()
+                if k in ScraperConfig.__dataclass_fields__
+            }
+        ),
+        database=DatabaseConfig(
+            **{
+                k: v
+                for k, v in db_raw.items()
+                if k in DatabaseConfig.__dataclass_fields__
+            }
+        ),
+        ranking_weights=RankingWeights(
+            **{
+                k: v
+                for k, v in weights_raw.items()
+                if k in RankingWeights.__dataclass_fields__
+            }
+        ),
+        credit_limits=CreditLimits(
+            **{
+                k: v
+                for k, v in limits_raw.items()
+                if k in CreditLimits.__dataclass_fields__
+            }
+        ),
     )
 
 

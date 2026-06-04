@@ -52,7 +52,7 @@ def redact_for_external(transcript: Transcript) -> Transcript:
     # gratuitous detail — drop it.
     for tc in redacted.transfer_credits or []:
         if hasattr(tc, "source_institution"):
-            tc.source_institution = None
+            setattr(tc, "source_institution", None)
 
     if stripped:
         logger.debug(f"Redacted fields for hosted LLM: {stripped}")

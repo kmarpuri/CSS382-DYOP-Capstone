@@ -25,11 +25,13 @@ from capstone.transcript.models import CompletedCourse, Transcript
 from capstone.transcript.parser import parse_transcript
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent))
 from generate_fixture_pdfs import generate_all, ALL_GENERATORS  # type: ignore # noqa
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="session")
 def pdf_dir(tmp_path_factory):
@@ -51,6 +53,7 @@ def default_config() -> AppConfig:
 
 # ── Test Class: PDF Parsing ─────────────────────────────────────────────────
 
+
 class TestPDFParsing:
     """Every generated PDF fixture must parse into a valid Transcript."""
 
@@ -64,9 +67,9 @@ class TestPDFParsing:
     @pytest.mark.parametrize("name", list(ALL_GENERATORS.keys()))
     def test_every_fixture_has_completed_courses(self, pdf_dir, name):
         transcript = parse_transcript(pdf_dir / f"{name}.pdf")
-        assert len(transcript.completed) > 0, (
-            f"{name}: expected at least one completed course"
-        )
+        assert (
+            len(transcript.completed) > 0
+        ), f"{name}: expected at least one completed course"
 
     @pytest.mark.parametrize("name", list(ALL_GENERATORS.keys()))
     def test_no_parse_errors_on_grade_field(self, pdf_dir, name):
@@ -78,12 +81,11 @@ class TestPDFParsing:
                 try:
                     float(c.grade)
                 except ValueError:
-                    pytest.fail(
-                        f"{name}: invalid grade '{c.grade}' for {c.course_id}"
-                    )
+                    pytest.fail(f"{name}: invalid grade '{c.grade}' for {c.course_id}")
 
 
 # ── Test Class: CSSE Junior Transcript ──────────────────────────────────────
+
 
 class TestCSSEJuniorTranscript:
     """Detailed field extraction tests for the standard CSSE junior PDF."""
@@ -122,9 +124,7 @@ class TestCSSEJuniorTranscript:
 
     def test_css142_grade(self, pdf_dir):
         t = self._parse(pdf_dir)
-        css142 = next(
-            (c for c in t.completed if c.course_id == "CSS 142"), None
-        )
+        css142 = next((c for c in t.completed if c.course_id == "CSS 142"), None)
         assert css142 is not None
         assert css142.grade == "3.8"
         assert css142.quarter == "AUT"
@@ -186,6 +186,7 @@ class TestCSSEJuniorTranscript:
 
 # ── Test Class: Freshman Minimal ────────────────────────────────────────────
 
+
 class TestFreshmanMinimal:
     """Minimal transcript — 1 quarter, no transfers, no WIP."""
 
@@ -208,6 +209,7 @@ class TestFreshmanMinimal:
 
 
 # ── Test Class: Senior Heavy ────────────────────────────────────────────────
+
 
 class TestSeniorHeavy:
     """Senior with 30+ courses across 8 quarters, including W grades."""
@@ -237,6 +239,7 @@ class TestSeniorHeavy:
 
 # ── Test Class: Transfer Student ────────────────────────────────────────────
 
+
 class TestTransferStudent:
     """Heavy AP/IB/Running Start credits."""
 
@@ -256,8 +259,7 @@ class TestTransferStudent:
 
     def test_running_start_credits(self, pdf_dir):
         t = parse_transcript(pdf_dir / "transfer_student.pdf")
-        rs = [tc for tc in t.transfer_credits
-              if tc.source == "RUNNING_START"]
+        rs = [tc for tc in t.transfer_credits if tc.source == "RUNNING_START"]
         assert len(rs) >= 1
 
     def test_wip_present(self, pdf_dir):
@@ -266,6 +268,7 @@ class TestTransferStudent:
 
 
 # ── Test Class: Math Major ──────────────────────────────────────────────────
+
 
 class TestMathMajor:
     """Non-CSSE major detection."""
@@ -277,12 +280,12 @@ class TestMathMajor:
 
     def test_stmath_courses_parsed(self, pdf_dir):
         t = parse_transcript(pdf_dir / "math_major.pdf")
-        stmath = [c for c in t.completed
-                  if c.course_id.startswith("STMATH")]
+        stmath = [c for c in t.completed if c.course_id.startswith("STMATH")]
         assert len(stmath) >= 4
 
 
 # ── Test Class: Edge Case Grades ────────────────────────────────────────────
+
 
 class TestEdgeCaseGrades:
     """CR, NC, W, S, HW, HP, N all handled correctly."""
@@ -352,15 +355,14 @@ class TestEdgeCaseGrades:
 
 # ── Test Class: Dense Two-Column ────────────────────────────────────────────
 
+
 class TestDenseTwoColumn:
     """32 courses across 8 quarters — stress the extraction logic."""
 
     def test_parses_many_courses(self, pdf_dir):
         t = parse_transcript(pdf_dir / "two_column_dense.pdf")
         # 8 quarters × 4 courses = 32 expected
-        assert len(t.completed) >= 25, (
-            f"Expected 25+ courses, got {len(t.completed)}"
-        )
+        assert len(t.completed) >= 25, f"Expected 25+ courses, got {len(t.completed)}"
 
     def test_class_standing(self, pdf_dir):
         t = parse_transcript(pdf_dir / "two_column_dense.pdf")
@@ -369,18 +371,19 @@ class TestDenseTwoColumn:
 
 # ── Test Class: End-to-End Recommendation ───────────────────────────────────
 
+
 class TestEndToEndRecommendation:
     """PDF → parse → recommend pipeline — hard constraints hold."""
 
-    def test_csse_junior_gets_recommendations(self, pdf_dir, fixture_db,
-                                              default_config):
+    def test_csse_junior_gets_recommendations(
+        self, pdf_dir, fixture_db, default_config
+    ):
         t = parse_transcript(pdf_dir / "csse_junior.pdf")
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(t, target_quarter="AUT", use_llm=False)
         assert len(result.recommendations) > 0
 
-    def test_no_completed_course_recommended(self, pdf_dir, fixture_db,
-                                             default_config):
+    def test_no_completed_course_recommended(self, pdf_dir, fixture_db, default_config):
         t = parse_transcript(pdf_dir / "csse_junior.pdf")
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(t, target_quarter="WIN", use_llm=False)
@@ -388,12 +391,9 @@ class TestEndToEndRecommendation:
         completed_ids = {c.course_id for c in t.completed}
         rec_ids = {r.course_id for r in result.recommendations}
         overlap = completed_ids & rec_ids
-        assert not overlap, (
-            f"Recommended already-completed courses: {overlap}"
-        )
+        assert not overlap, f"Recommended already-completed courses: {overlap}"
 
-    def test_no_wip_course_recommended(self, pdf_dir, fixture_db,
-                                       default_config):
+    def test_no_wip_course_recommended(self, pdf_dir, fixture_db, default_config):
         t = parse_transcript(pdf_dir / "csse_junior.pdf")
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(t, target_quarter="AUT", use_llm=False)
@@ -411,15 +411,13 @@ class TestEndToEndRecommendation:
         # All recs must exist in the catalog
         for r in result.recommendations:
             row = fixture_db.execute(
-                "SELECT 1 FROM courses WHERE course_id = ?",
-                (r.course_id,)
+                "SELECT 1 FROM courses WHERE course_id = ?", (r.course_id,)
             ).fetchone()
-            assert row is not None, (
-                f"Recommended non-existent course {r.course_id}"
-            )
+            assert row is not None, f"Recommended non-existent course {r.course_id}"
 
-    def test_freshman_gets_safe_recommendations(self, pdf_dir, fixture_db,
-                                                default_config):
+    def test_freshman_gets_safe_recommendations(
+        self, pdf_dir, fixture_db, default_config
+    ):
         """A freshman with only CSS 142 should not get 300+ level courses."""
         t = parse_transcript(pdf_dir / "freshman_minimal.pdf")
         rec = Recommender(fixture_db, default_config)
@@ -434,18 +432,16 @@ class TestEndToEndRecommendation:
 
 # ── Test Class: Credit Load Variations ──────────────────────────────────────
 
+
 class TestCreditLoadVariations:
     """Different credit loads (5, 10, 15, 20) all respected."""
 
     @pytest.mark.parametrize("load", [5, 10, 15, 20])
-    def test_credit_load_respected(self, pdf_dir, fixture_db, default_config,
-                                   load):
+    def test_credit_load_respected(self, pdf_dir, fixture_db, default_config, load):
         t = parse_transcript(pdf_dir / "csse_junior.pdf")
         default_config.credit_limits.hard_ceiling = 25
         rec = Recommender(fixture_db, default_config)
-        result = rec.recommend(
-            t, target_quarter="WIN", credit_load=load, use_llm=False
-        )
+        result = rec.recommend(t, target_quarter="WIN", credit_load=load, use_llm=False)
         # total_credits should be within [load-2, load+2] or less
         # (less if not enough eligible courses)
         assert result.total_credits <= load + 2
@@ -453,17 +449,20 @@ class TestCreditLoadVariations:
 
 # ── Test Class: API End-to-End with PDFs ────────────────────────────────────
 
+
 class TestAPIEndToEndWithPDF:
     """POST /api/parse-transcript → POST /api/recommend via TestClient."""
 
     @pytest.fixture
-    def client(self):
+    def client(self, monkeypatch, tmp_path):
         from fastapi.testclient import TestClient  # type: ignore
         from capstone.api import app
+
+        # Point the API at a temp DB so local dev databases don't leak into tests.
+        monkeypatch.setenv("CAPSTONE_DB", str(tmp_path / "api.db"))
         return TestClient(app)
 
-    @pytest.mark.parametrize("name", ["csse_junior", "freshman_minimal",
-                                      "edge_cases"])
+    @pytest.mark.parametrize("name", ["csse_junior", "freshman_minimal", "edge_cases"])
     def test_parse_and_recommend_via_api(self, client, pdf_dir, name):
         pdf_path = pdf_dir / f"{name}.pdf"
 
@@ -478,13 +477,16 @@ class TestAPIEndToEndWithPDF:
         assert len(transcript["completed"]) > 0
 
         # Step 2: get recommendations (no LLM)
-        r = client.post("/api/recommend", json={
-            "transcript": transcript,
-            "target_quarter": "AUT",
-            "credit_load": 15,
-            "top_n": 5,
-            "use_llm": False,
-        })
+        r = client.post(
+            "/api/recommend",
+            json={
+                "transcript": transcript,
+                "target_quarter": "AUT",
+                "credit_load": 15,
+                "top_n": 5,
+                "use_llm": False,
+            },
+        )
         # 200 or 503 (if DB not initialized) — both are valid
         assert r.status_code in (200, 503)
         if r.status_code == 200:
@@ -501,75 +503,113 @@ class TestAPIEndToEndWithPDF:
 
 # ── Test Class: Grade Semantics ─────────────────────────────────────────────
 
+
 class TestGradeSemantics:
     """Verify grade-related model methods work correctly."""
 
     def test_passed_numeric(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="3.5", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="3.5",
+            quarter="AUT",
+            year=2024,
         )
         assert c.is_passed
 
     def test_failed_numeric(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="0.0", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="0.0",
+            quarter="AUT",
+            year=2024,
         )
         assert not c.is_passed
 
     def test_cr_passes(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=1.0,
-            grade="CR", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=1.0,
+            grade="CR",
+            quarter="AUT",
+            year=2024,
         )
         assert c.is_passed
 
     def test_s_passes(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="S", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="S",
+            quarter="AUT",
+            year=2024,
         )
         assert c.is_passed
 
     def test_w_not_passed(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="W", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="W",
+            quarter="AUT",
+            year=2024,
         )
         assert not c.is_passed
         assert c.is_withdrawn
 
     def test_nc_not_passed(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="NC", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="NC",
+            quarter="AUT",
+            year=2024,
         )
         assert not c.is_passed
 
     def test_prereq_grade_default_2_0(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="2.0", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="2.0",
+            quarter="AUT",
+            year=2024,
         )
         assert c.meets_prereq_grade(None)  # default 2.0
 
     def test_prereq_grade_below_threshold(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=5.0,
-            grade="1.9", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=5.0,
+            grade="1.9",
+            quarter="AUT",
+            year=2024,
         )
         assert not c.meets_prereq_grade("2.0")
 
     def test_cr_meets_any_prereq(self):
         c = CompletedCourse(
-            course_id="X", title="x", credits=1.0,
-            grade="CR", quarter="AUT", year=2024,
+            course_id="X",
+            title="x",
+            credits=1.0,
+            grade="CR",
+            quarter="AUT",
+            year=2024,
         )
         assert c.meets_prereq_grade("3.5")
 
 
 # ── Test Class: Transcript Serialization Round-Trip ─────────────────────────
+
 
 class TestTranscriptSerialization:
     """Verify that a parsed transcript serializes to JSON and back."""

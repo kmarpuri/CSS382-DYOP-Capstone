@@ -33,13 +33,22 @@ _DAY_TOKENS = ["M", "Th", "T", "W", "F", "Sa", "Su"]
 
 # Map free-form day words → canonical token used in the schedule.
 _DAY_WORDS = {
-    "monday": "M", "mon": "M",
-    "tuesday": "T", "tues": "T", "tue": "T",
-    "wednesday": "W", "wed": "W",
-    "thursday": "Th", "thurs": "Th", "thu": "Th",
-    "friday": "F", "fri": "F",
-    "saturday": "Sa", "sat": "Sa",
-    "sunday": "Su", "sun": "Su",
+    "monday": "M",
+    "mon": "M",
+    "tuesday": "T",
+    "tues": "T",
+    "tue": "T",
+    "wednesday": "W",
+    "wed": "W",
+    "thursday": "Th",
+    "thurs": "Th",
+    "thu": "Th",
+    "friday": "F",
+    "fri": "F",
+    "saturday": "Sa",
+    "sat": "Sa",
+    "sunday": "Su",
+    "sun": "Su",
 }
 
 
@@ -56,7 +65,7 @@ def parse_days(token: str | None) -> set[str]:
     s = token.strip()
     while i < len(s):
         for tok in _DAY_TOKENS:
-            if s[i:i + len(tok)] == tok:
+            if s[i : i + len(tok)] == tok:
                 out.add(tok)
                 i += len(tok)
                 break
@@ -66,6 +75,7 @@ def parse_days(token: str | None) -> set[str]:
 
 
 # ── Clock parsing ────────────────────────────────────────────────────────
+
 
 def parse_uw_time(hhmm: str | None, *, assume_pm: bool | None = None) -> int | None:
     """Convert a bare ``HHMM`` UW time string to minutes-since-midnight.
@@ -163,8 +173,8 @@ class TimePreference:
     can't violate a clock preference.
     """
 
-    earliest_start: int | None = None    # minutes-since-midnight
-    latest_end: int | None = None        # minutes-since-midnight
+    earliest_start: int | None = None  # minutes-since-midnight
+    latest_end: int | None = None  # minutes-since-midnight
     excluded_days: set[str] = field(default_factory=set)
 
     def is_active(self) -> bool:
@@ -227,11 +237,15 @@ def parse_time_preference(prompt: str | None) -> TimePreference:
         pref._tighten_start(_EVENING)
 
     # Explicit "before <time>" / "after <time>".
-    for m in re.finditer(r"\bbefore\s+(\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?|\d{1,2}:\d{2})", text):
+    for m in re.finditer(
+        r"\bbefore\s+(\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?|\d{1,2}:\d{2})", text
+    ):
         mins = _parse_clock_phrase(m.group(1))
         if mins is not None:
             pref._tighten_end(mins)
-    for m in re.finditer(r"\bafter\s+(\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?|\d{1,2}:\d{2})", text):
+    for m in re.finditer(
+        r"\bafter\s+(\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?|\d{1,2}:\d{2})", text
+    ):
         mins = _parse_clock_phrase(m.group(1))
         if mins is not None:
             pref._tighten_start(mins)

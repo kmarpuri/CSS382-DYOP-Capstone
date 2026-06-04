@@ -17,12 +17,11 @@ import sqlite3
 from datetime import datetime, timezone
 
 import pytest
-
-libsql = pytest.importorskip("libsql")
-
 from capstone.db.connection import _LibsqlConnection, _LibsqlRow, using_turso
 from capstone.db.schema import init_db
 from capstone.scrapers.ratemyprofessor import lookup_ratings
+
+libsql = pytest.importorskip("libsql")
 
 
 @pytest.fixture
@@ -30,7 +29,7 @@ def turso_conn(tmp_path):
     """A libSQL-backed connection in local-only mode (no sync_url)."""
     raw = libsql.connect(str(tmp_path / "local.db"))
     conn = _LibsqlConnection(raw)
-    init_db(conn)
+    init_db(conn)  # type: ignore
     return conn
 
 
@@ -95,8 +94,21 @@ class TestWrapperWithAppCode:
                  avg_rating, avg_difficulty, num_ratings,
                  would_take_again_pct, rmp_legacy_id, last_scraped
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            [("Munehiro Fukuda", "MUNEHIRO FUKUDA", "1431", "UWB", "CSS",
-              4.5, 3.2, 42, 88.0, "987654", now)],
+            [
+                (
+                    "Munehiro Fukuda",
+                    "MUNEHIRO FUKUDA",
+                    "1431",
+                    "UWB",
+                    "CSS",
+                    4.5,
+                    3.2,
+                    42,
+                    88.0,
+                    "987654",
+                    now,
+                )
+            ],
         )
         turso_conn.commit()
 
@@ -120,9 +132,7 @@ class TestWrapperWithAppCode:
             (now,),
         )
         turso_conn.rollback()
-        n = turso_conn.execute(
-            "SELECT COUNT(*) FROM professor_ratings"
-        ).fetchone()[0]
+        n = turso_conn.execute("SELECT COUNT(*) FROM professor_ratings").fetchone()[0]
         assert n == 0
 
 

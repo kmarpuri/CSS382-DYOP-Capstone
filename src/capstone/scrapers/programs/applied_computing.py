@@ -34,30 +34,39 @@ class AppliedComputingProgramScraper(ProgramScraper):
 
     # Applied-track upper-division courses
     APPLIED_CORE = [
-        "CSS 301",   # Technical Writing for Computing Professionals
-        "CSS 310",   # Information Assurance and Cybersecurity
-        "CSS 340",   # Applied Algorithmics
-        "CSS 350",   # Management Principles for Computing Professionals
-        "CSS 360",   # Software Engineering
+        "CSS 301",  # Technical Writing for Computing Professionals
+        "CSS 310",  # Information Assurance and Cybersecurity
+        "CSS 340",  # Applied Algorithmics
+        "CSS 350",  # Management Principles for Computing Professionals
+        "CSS 360",  # Software Engineering
     ]
 
     # Capstone is specific to Applied Computing
-    CAPSTONE = ["CSS 496"]   # Applied Computing Capstone
+    CAPSTONE = ["CSS 496"]  # Applied Computing Capstone
 
     MATH = ["STMATH 124", "STMATH 125"]
     STATS_OPTIONS = ["B BUS 215", "STMATH 341", "STMATH 390"]
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("CSS 360", ["CSS 350"],
-         "Management Principles introduces the SDLC and team workflows that "
-         "Software Engineering then formalizes."),
-        ("CSS 310", ["CSS 342"],
-         "Cybersecurity assumes comfort with data structures and the "
-         "memory-corruption story they enable."),
-        ("CSS 496", ["CSS 360"],
-         "The Applied Computing capstone is where Software Engineering "
-         "process knowledge gets exercised end-to-end."),
+        (
+            "CSS 360",
+            ["CSS 350"],
+            "Management Principles introduces the SDLC and team workflows that "
+            "Software Engineering then formalizes.",
+        ),
+        (
+            "CSS 310",
+            ["CSS 342"],
+            "Cybersecurity assumes comfort with data structures and the "
+            "memory-corruption story they enable.",
+        ),
+        (
+            "CSS 496",
+            ["CSS 360"],
+            "The Applied Computing capstone is where Software Engineering "
+            "process knowledge gets exercised end-to-end.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -71,12 +80,17 @@ class AppliedComputingProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "math", self.MATH)
         count += self._insert_pick_one_group(
-            conn, "stats", self.STATS_OPTIONS,
-            group_id=1, notes="Pick one statistics course",
+            conn,
+            "stats",
+            self.STATS_OPTIONS,
+            group_id=1,
+            notes="Pick one statistics course",
         )
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
         self._insert_req(
-            conn, "elective", "CSS 200+",
+            conn,
+            "elective",
+            "CSS 200+",
             required_count=20,
             notes="20 credits of CSS electives at 200-level or above",
         )

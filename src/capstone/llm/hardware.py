@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class HardwareTier:
-    tier: int                  # 1..4
+    tier: int  # 1..4
     ram_gb: float
     vram_gb: float
     model: str
@@ -37,7 +37,8 @@ def _total_ram_gb() -> float:
     """Best-effort detection of total system RAM (in GB)."""
     try:
         import psutil
-        return psutil.virtual_memory().total / (1024 ** 3)
+
+        return psutil.virtual_memory().total / (1024**3)
     except ImportError:
         pass
 
@@ -47,18 +48,18 @@ def _total_ram_gb() -> float:
             for line in f:
                 if line.startswith("MemTotal"):
                     kb = int(line.split()[1])
-                    return kb / (1024 ** 2)
+                    return kb / (1024**2)
     except OSError:
         pass
 
     # macOS: sysctl
     try:
         out = subprocess.check_output(["sysctl", "-n", "hw.memsize"], text=True)
-        return int(out.strip()) / (1024 ** 3)
+        return int(out.strip()) / (1024**3)
     except (subprocess.SubprocessError, OSError):
         pass
 
-    return 8.0   # Fallback — pick the conservative tier
+    return 8.0  # Fallback — pick the conservative tier
 
 
 def _vram_gb() -> float:
@@ -66,7 +67,11 @@ def _vram_gb() -> float:
     if shutil.which("nvidia-smi"):
         try:
             out = subprocess.check_output(
-                ["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"],
+                [
+                    "nvidia-smi",
+                    "--query-gpu=memory.total",
+                    "--format=csv,noheader,nounits",
+                ],
                 text=True,
             )
             mb = max(int(x.strip()) for x in out.splitlines() if x.strip())

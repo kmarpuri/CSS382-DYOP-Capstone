@@ -21,7 +21,9 @@ from capstone.recommender import Recommender
 from capstone.transcript.models import CompletedCourse, InProgressCourse, Transcript
 
 
-def _build_transcript(completed: list[tuple[str, str]], in_progress: list[str] | None = None) -> Transcript:
+def _build_transcript(
+    completed: list[tuple[str, str]], in_progress: list[str] | None = None
+) -> Transcript:
     """Convenience: build a Transcript from (course_id, grade) tuples."""
     return Transcript(
         major="CSSE",
@@ -30,14 +32,19 @@ def _build_transcript(completed: list[tuple[str, str]], in_progress: list[str] |
         total_credits_earned=float(len(completed) * 5),
         completed=[
             CompletedCourse(
-                course_id=cid, title=cid, credits=5.0,
-                grade=grade, quarter="AUT", year=2024,
+                course_id=cid,
+                title=cid,
+                credits=5.0,
+                grade=grade,
+                quarter="AUT",
+                year=2024,
             )
             for cid, grade in completed
         ],
         in_progress=[
-            InProgressCourse(course_id=cid, title=cid, credits=5.0,
-                             quarter="SPR", year=2026)
+            InProgressCourse(
+                course_id=cid, title=cid, credits=5.0, quarter="SPR", year=2026
+            )
             for cid in (in_progress or [])
         ],
     )
@@ -46,13 +53,23 @@ def _build_transcript(completed: list[tuple[str, str]], in_progress: list[str] |
 def _add_section(conn, cid, days, ts, te, *, quarter="WIN", year=2026, section="A"):
     """Insert a single scheduled section into the fixture's time_schedule."""
     from datetime import datetime, timezone
+
     conn.execute(
         "INSERT INTO time_schedule "
         "(course_id, section_id, quarter, year, days, time_start, time_end, "
         " status, scraped_at) "
         "VALUES (?,?,?,?,?,?,?,?,?)",
-        (cid, section, quarter, year, days, ts, te, "Open",
-         datetime(2026, 5, 18, tzinfo=timezone.utc).isoformat()),
+        (
+            cid,
+            section,
+            quarter,
+            year,
+            days,
+            ts,
+            te,
+            "Open",
+            datetime(2026, 5, 18, tzinfo=timezone.utc).isoformat(),
+        ),
     )
 
 
@@ -78,9 +95,9 @@ class TestHardConstraints:
 
         completed_ids = {c for c, _ in completed}
         recommended_ids = {r.course_id for r in result.recommendations}
-        assert not (completed_ids & recommended_ids), (
-            f"Recommended already-completed: {completed_ids & recommended_ids}"
-        )
+        assert not (
+            completed_ids & recommended_ids
+        ), f"Recommended already-completed: {completed_ids & recommended_ids}"
 
     def test_never_recommends_unmet_prereqs(self, fixture_db, default_config):
         # Student has only CSS 142 — cannot take 300+ courses
@@ -96,11 +113,16 @@ class TestHardConstraints:
         assert "CSS 343" not in recommended_ids
 
     def test_only_recommends_existing_courses(self, fixture_db, default_config):
-        transcript = _build_transcript([
-            ("CSS 142", "3.8"), ("CSS 143", "3.0"),
-            ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-            ("CSS 342", "3.2"), ("CSS 301", "3.0"),
-        ])
+        transcript = _build_transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(transcript, target_quarter="WIN", use_llm=False)
@@ -115,9 +137,13 @@ class TestHardConstraints:
     def test_in_progress_treated_as_completed(self, fixture_db, default_config):
         # Same student, but CSS 342 is in-progress instead of completed
         transcript = _build_transcript(
-            [("CSS 142", "3.8"), ("CSS 143", "3.0"),
-             ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-             ("CSS 301", "3.0")],
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 301", "3.0"),
+            ],
             in_progress=["CSS 342"],
         )
 
@@ -134,11 +160,16 @@ class TestRanking:
         """The standard junior — past CSS 143/STMATH 125/CSS 342 — should
         see CSS 360 and CSS 343 as top picks (they unlock CSS 370, CSS 430,
         CSS 497)."""
-        transcript = _build_transcript([
-            ("CSS 142", "3.8"), ("CSS 143", "3.0"),
-            ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-            ("CSS 342", "3.2"), ("CSS 301", "3.0"),
-        ])
+        transcript = _build_transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(transcript, target_quarter="WIN", top_n=5, use_llm=False)
@@ -148,11 +179,16 @@ class TestRanking:
         assert "CSS 343" in top_ids or "CSS 360" in top_ids
 
     def test_fill_to_n_respects_target_load(self, fixture_db, default_config):
-        transcript = _build_transcript([
-            ("CSS 142", "3.8"), ("CSS 143", "3.0"),
-            ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-            ("CSS 342", "3.2"), ("CSS 301", "3.0"),
-        ])
+        transcript = _build_transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(transcript, credit_load=15, use_llm=False)
@@ -163,11 +199,16 @@ class TestRanking:
     def test_credit_ceiling_respected(self, fixture_db, default_config):
         default_config.credit_limits.hard_ceiling = 10
 
-        transcript = _build_transcript([
-            ("CSS 142", "3.8"), ("CSS 143", "3.0"),
-            ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-            ("CSS 342", "3.2"), ("CSS 301", "3.0"),
-        ])
+        transcript = _build_transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(transcript, credit_load=15, use_llm=False)
@@ -178,23 +219,32 @@ class TestTimePreference:
     """Issue 1: a stated time window must actually filter the schedule."""
 
     def _junior(self):
-        return _build_transcript([
-            ("CSS 142", "3.8"), ("CSS 143", "3.0"),
-            ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-            ("CSS 342", "3.2"), ("CSS 301", "3.0"),
-        ])
+        return _build_transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),
+                ("CSS 301", "3.0"),
+            ]
+        )
 
-    def test_afternoon_only_course_dropped_for_morning_pref(self, fixture_db, default_config):
+    def test_afternoon_only_course_dropped_for_morning_pref(
+        self, fixture_db, default_config
+    ):
         # B WRIT 135 is not a major requirement → droppable when it conflicts.
-        _add_section(fixture_db, "CSS 360", "MWF", "930", "1020")    # morning
-        _add_section(fixture_db, "CSS 343", "MWF", "1030", "1120")   # morning
+        _add_section(fixture_db, "CSS 360", "MWF", "930", "1020")  # morning
+        _add_section(fixture_db, "CSS 343", "MWF", "1030", "1120")  # morning
         _add_section(fixture_db, "B WRIT 135", "TTh", "145", "245")  # afternoon only
         fixture_db.commit()
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(
-            self._junior(), target_quarter="WIN",
-            user_prompt="I only want morning classes", use_llm=False,
+            self._junior(),
+            target_quarter="WIN",
+            user_prompt="I only want morning classes",
+            use_llm=False,
         )
         ids = {r.course_id for r in result.recommendations}
         assert "B WRIT 135" not in ids
@@ -209,8 +259,10 @@ class TestTimePreference:
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(
-            self._junior(), target_quarter="WIN",
-            user_prompt="mornings only please", use_llm=False,
+            self._junior(),
+            target_quarter="WIN",
+            user_prompt="mornings only please",
+            use_llm=False,
         )
         ids = {r.course_id for r in result.recommendations}
         assert "CSS 360" in ids
@@ -229,14 +281,20 @@ class TestTimePreference:
 class TestPrereqOrdering:
     """Issue 2: a prereq that's also recommended must precede its dependent."""
 
-    def test_concurrent_prereq_ranked_before_dependent(self, fixture_db, default_config):
+    def test_concurrent_prereq_ranked_before_dependent(
+        self, fixture_db, default_config
+    ):
         # CSS 343 needs CSS 342 (done) + CSS 301 (concurrent, NOT done). Both
         # CSS 301 and CSS 343 should be recommended; 301 must come first.
-        transcript = _build_transcript([
-            ("CSS 142", "3.8"), ("CSS 143", "3.0"),
-            ("STMATH 124", "4.0"), ("STMATH 125", "3.9"),
-            ("CSS 342", "3.2"),  # note: CSS 301 intentionally NOT completed
-        ])
+        transcript = _build_transcript(
+            [
+                ("CSS 142", "3.8"),
+                ("CSS 143", "3.0"),
+                ("STMATH 124", "4.0"),
+                ("STMATH 125", "3.9"),
+                ("CSS 342", "3.2"),  # note: CSS 301 intentionally NOT completed
+            ]
+        )
 
         rec = Recommender(fixture_db, default_config)
         result = rec.recommend(transcript, target_quarter="WIN", use_llm=False)
@@ -244,6 +302,6 @@ class TestPrereqOrdering:
 
         assert "CSS 343" in ids
         assert "CSS 301" in ids
-        assert ids.index("CSS 301") < ids.index("CSS 343"), (
-            f"prereq CSS 301 should precede CSS 343; got {ids}"
-        )
+        assert ids.index("CSS 301") < ids.index(
+            "CSS 343"
+        ), f"prereq CSS 301 should precede CSS 343; got {ids}"

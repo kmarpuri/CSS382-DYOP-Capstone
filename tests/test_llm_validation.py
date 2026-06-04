@@ -9,10 +9,7 @@ non-negotiable per the spec. These tests verify that:
 
 from __future__ import annotations
 
-import sqlite3
 from unittest.mock import MagicMock
-
-import pytest
 
 from capstone.llm.reasoner import LLMReasoner
 from capstone.ranker import CourseScore
@@ -41,12 +38,14 @@ class TestLLMValidation:
     def test_drops_hallucinated_course(self, fixture_db):
         candidates = [_candidate("CSS 360"), _candidate("CSS 430")]
         # LLM emits a real-looking but fake course
-        backend = _mock_backend({
-            "recommendations": [
-                {"course_id": "CSS 999", "rank": 1, "reasoning": "fake"},
-                {"course_id": "CSS 360", "rank": 2, "reasoning": "real"},
-            ],
-        })
+        backend = _mock_backend(
+            {
+                "recommendations": [
+                    {"course_id": "CSS 999", "rank": 1, "reasoning": "fake"},
+                    {"course_id": "CSS 360", "rank": 2, "reasoning": "real"},
+                ],
+            }
+        )
         r = LLMReasoner(backend, fixture_db)
         ranked, warnings = r.rerank(candidates, Transcript(major="CSSE"))
         ids = [c.course_id for c in ranked]
@@ -60,13 +59,19 @@ class TestLLMValidation:
         it should be dropped with a clear warning.
         """
         candidates = [_candidate("CSS 360")]
-        backend = _mock_backend({
-            "recommendations": [
-                # CSS 422 exists in fixture_db but isn't a candidate here.
-                {"course_id": "CSS 422", "rank": 1, "reasoning": "exists but off-list"},
-                {"course_id": "CSS 360", "rank": 2, "reasoning": "ok"},
-            ],
-        })
+        backend = _mock_backend(
+            {
+                "recommendations": [
+                    # CSS 422 exists in fixture_db but isn't a candidate here.
+                    {
+                        "course_id": "CSS 422",
+                        "rank": 1,
+                        "reasoning": "exists but off-list",
+                    },
+                    {"course_id": "CSS 360", "rank": 2, "reasoning": "ok"},
+                ],
+            }
+        )
         r = LLMReasoner(backend, fixture_db)
         ranked, warnings = r.rerank(candidates, Transcript(major="CSSE"))
         ids = [c.course_id for c in ranked]
@@ -74,12 +79,18 @@ class TestLLMValidation:
         assert any("exists but wasn't in the candidate" in w for w in warnings)
 
     def test_preserves_candidates_omitted_by_llm(self, fixture_db):
-        candidates = [_candidate("CSS 360"), _candidate("CSS 430"), _candidate("CSS 422")]
-        backend = _mock_backend({
-            "recommendations": [
-                {"course_id": "CSS 430", "rank": 1, "reasoning": "ranked first"},
-            ],
-        })
+        candidates = [
+            _candidate("CSS 360"),
+            _candidate("CSS 430"),
+            _candidate("CSS 422"),
+        ]
+        backend = _mock_backend(
+            {
+                "recommendations": [
+                    {"course_id": "CSS 430", "rank": 1, "reasoning": "ranked first"},
+                ],
+            }
+        )
         r = LLMReasoner(backend, fixture_db)
         ranked, _ = r.rerank(candidates, Transcript(major="CSSE"))
         ids = [c.course_id for c in ranked]
@@ -89,12 +100,17 @@ class TestLLMValidation:
 
     def test_attaches_reasoning_to_picks(self, fixture_db):
         candidates = [_candidate("CSS 360")]
-        backend = _mock_backend({
-            "recommendations": [
-                {"course_id": "CSS 360", "rank": 1,
-                 "reasoning": "Unlocks the capstone sequence."},
-            ],
-        })
+        backend = _mock_backend(
+            {
+                "recommendations": [
+                    {
+                        "course_id": "CSS 360",
+                        "rank": 1,
+                        "reasoning": "Unlocks the capstone sequence.",
+                    },
+                ],
+            }
+        )
         r = LLMReasoner(backend, fixture_db)
         ranked, _ = r.rerank(candidates, Transcript(major="CSSE"))
         assert ranked[0].reasoning == "Unlocks the capstone sequence."

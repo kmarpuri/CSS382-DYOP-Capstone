@@ -17,7 +17,6 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
-from dataclasses import dataclass
 from typing import Any
 
 from capstone.llm.backend import LLMBackend
@@ -109,6 +108,7 @@ HARD RULES:
 
 # ── Reasoner ────────────────────────────────────────────────────────────
 
+
 class LLMReasoner:
     """Rerank deterministic candidates with an LLM and attach reasoning."""
 
@@ -143,10 +143,14 @@ class LLMReasoner:
         # transcript before it ever reaches the prompt builder.
         if getattr(self.backend, "requires_redaction", False):
             from capstone.llm.redact import redact_for_external
+
             transcript = redact_for_external(transcript)
 
         prompt = self._build_prompt(
-            candidates, transcript, target_quarter, user_prompt,
+            candidates,
+            transcript,
+            target_quarter,
+            user_prompt,
         )
         try:
             response = self.backend.generate_json(
@@ -185,13 +189,13 @@ class LLMReasoner:
             for c in transcript.completed[-15:]  # cap context
         ]
         in_progress = [
-            {"course_id": c.course_id, "title": c.title}
-            for c in transcript.in_progress
+            {"course_id": c.course_id, "title": c.title} for c in transcript.in_progress
         ]
         # Pre-fetch meeting-time data so the LLM can reason about
         # time-of-day / day-of-week preferences expressed in user_prompt.
         sections_by_course = self._fetch_sections(
-            [s.course_id for s in candidates], target_quarter,
+            [s.course_id for s in candidates],
+            target_quarter,
         )
 
         candidate_table = [
@@ -275,6 +279,7 @@ class LLMReasoner:
         # Look up cached professor ratings, if any
         try:
             from capstone.scrapers.ratemyprofessor import lookup_ratings
+
             instructor_names = [r["instructor"] for r in rows if r["instructor"]]
             ratings = lookup_ratings(self.conn, instructor_names)
         except Exception as e:
@@ -290,7 +295,9 @@ class LLMReasoner:
                 "days": r["days"],
                 "time": format_time_window(r["time_start"], r["time_end"]),
                 "instructor": r["instructor"],
-                "room": f"{r['building']} {r['room']}".strip() if r["building"] else None,
+                "room": (
+                    f"{r['building']} {r['room']}".strip() if r["building"] else None
+                ),
                 "status": r["status"],
             }
             if rating:
@@ -313,7 +320,9 @@ class LLMReasoner:
         from capstone.scrapers.programs.synergies import synergy_map
 
         rationale_map = synergy_map(transcript.major or "CSSE")
-        completed_ids = {c.course_id for c in transcript.completed if not c.is_withdrawn}
+        completed_ids = {
+            c.course_id for c in transcript.completed if not c.is_withdrawn
+        }
 
         out: dict[str, dict] = {}
         for s in candidates:
@@ -356,7 +365,8 @@ class LLMReasoner:
                 # Validate against the full catalog so we can give a
                 # clear hallucination warning, not a silent drop.
                 exists = self.conn.execute(
-                    "SELECT 1 FROM courses WHERE course_id = ?", (cid,),
+                    "SELECT 1 FROM courses WHERE course_id = ?",
+                    (cid,),
                 ).fetchone()
                 if exists:
                     warnings.append(
@@ -372,7 +382,7 @@ class LLMReasoner:
             seen.add(cid)
 
             cscore = candidate_by_id[cid]
-            cscore.reasoning = reasoning   # attach LLM rationale
+            cscore.reasoning = reasoning  # attach LLM rationale
             ordered.append(cscore)
 
         # Append any candidates the LLM omitted (preserve their order)

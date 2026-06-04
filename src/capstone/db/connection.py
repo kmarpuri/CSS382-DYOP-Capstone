@@ -168,7 +168,9 @@ class _LibsqlConnection:
         self.row_factory = None
 
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> _LibsqlCursor:
-        cur = self._raw.execute(sql) if params is None else self._raw.execute(sql, params)
+        cur = (
+            self._raw.execute(sql) if params is None else self._raw.execute(sql, params)
+        )
         return _LibsqlCursor(cur)
 
     def executemany(self, sql: str, seq: Iterable[Sequence[Any]]) -> _LibsqlCursor:
@@ -205,7 +207,7 @@ def _connect_turso(db_path: Path, url: str, token: str) -> _LibsqlConnection:
     import libsql  # imported lazily so local/test runs never need the driver
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    raw = libsql.connect(str(db_path), sync_url=url, auth_token=token)
+    raw = libsql.connect(str(db_path), sync_url=url, auth_token=token)  # type: ignore[attr-defined]
     conn = _LibsqlConnection(raw)
     # Best-effort initial pull so reads see existing cloud data immediately.
     try:

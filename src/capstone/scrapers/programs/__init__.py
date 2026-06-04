@@ -25,21 +25,29 @@ from capstone.scrapers.programs.chemistry import (
     ChemistryBSBiochemProgramScraper,
     ChemistryBSProgramScraper,
 )
-from capstone.scrapers.programs.computer_engineering import ComputerEngineeringProgramScraper
+from capstone.scrapers.programs.computer_engineering import (
+    ComputerEngineeringProgramScraper,
+)
 from capstone.scrapers.programs.conservation import ConservationProgramScraper
 from capstone.scrapers.programs.csse import CSSEProgramScraper
-from capstone.scrapers.programs.cybersecurity import CybersecurityEngineeringProgramScraper
+from capstone.scrapers.programs.cybersecurity import (
+    CybersecurityEngineeringProgramScraper,
+)
 from capstone.scrapers.programs.data_visualization import (
     DataVisualizationBAProgramScraper,
     DataVisualizationBSProgramScraper,
 )
-from capstone.scrapers.programs.electrical_engineering import ElectricalEngineeringProgramScraper
+from capstone.scrapers.programs.electrical_engineering import (
+    ElectricalEngineeringProgramScraper,
+)
 from capstone.scrapers.programs.env_and_earth import (
     EarthSystemScienceProgramScraper,
     EnvironmentalStudiesProgramScraper,
 )
 from capstone.scrapers.programs.math import MathProgramScraper
-from capstone.scrapers.programs.mechanical_engineering import MechanicalEngineeringProgramScraper
+from capstone.scrapers.programs.mechanical_engineering import (
+    MechanicalEngineeringProgramScraper,
+)
 from capstone.scrapers.programs.physics import PhysicsProgramScraper
 from capstone.scrapers.programs.physics_ba import PhysicsBAProgramScraper
 
@@ -52,7 +60,9 @@ from capstone.scrapers.programs.educational_extras import (
     DevelopmentalYouthStudiesProgramScraper,
     ElementaryEducationProgramScraper,
 )
-from capstone.scrapers.programs.educational_studies import EducationalStudiesProgramScraper
+from capstone.scrapers.programs.educational_studies import (
+    EducationalStudiesProgramScraper,
+)
 
 # ── Health & Nursing ───────────────────────────────────────────────────
 from capstone.scrapers.programs.health_studies import HealthStudiesProgramScraper
@@ -80,48 +90,48 @@ from capstone.scrapers.programs.stub import StubProgramScraper
 # Order roughly mirrors the schools / catalog page.
 PROGRAM_SCRAPERS: dict[str, type] = {
     # ── Computing & Engineering (STEM) ──────────────────────────
-    "CSSE":      CSSEProgramScraper,                          # Computer Science & Software Engineering (B.S.)
-    "CSSEC":     CybersecurityEngineeringProgramScraper,      # CSSE (B.S. — Info Assurance & Cybersec option)
-    "ACMPT":     AppliedComputingProgramScraper,              # Applied Computing (B.A.)
-    "CE":        ComputerEngineeringProgramScraper,           # Computer Engineering (B.S.)
-    "EE":        ElectricalEngineeringProgramScraper,         # Electrical Engineering (B.S.)
-    "ME":        MechanicalEngineeringProgramScraper,         # Mechanical Engineering (B.S.)
+    "CSSE": CSSEProgramScraper,  # Computer Science & Software Engineering (B.S.)
+    "CSSEC": CybersecurityEngineeringProgramScraper,  # CSSE (B.S. — Info Assurance & Cybersec option)
+    "ACMPT": AppliedComputingProgramScraper,  # Applied Computing (B.A.)
+    "CE": ComputerEngineeringProgramScraper,  # Computer Engineering (B.S.)
+    "EE": ElectricalEngineeringProgramScraper,  # Electrical Engineering (B.S.)
+    "ME": MechanicalEngineeringProgramScraper,  # Mechanical Engineering (B.S.)
     # ── Math & Physical Sciences (STEM) ─────────────────────────
-    "MATH":      MathProgramScraper,                          # Mathematics (B.S.)
-    "PHYS":      PhysicsProgramScraper,                       # Physics (B.S.)
-    "PHYSBA":    PhysicsBAProgramScraper,                     # Physics (B.A.)
-    "CHEM":      ChemistryBSProgramScraper,                   # Chemistry (B.S.)
-    "CHEMBIO":   ChemistryBSBiochemProgramScraper,            # Chemistry (B.S. — Biochem option)
-    "CHEMBA":    ChemistryBAProgramScraper,                   # Chemistry (B.A.)
+    "MATH": MathProgramScraper,  # Mathematics (B.S.)
+    "PHYS": PhysicsProgramScraper,  # Physics (B.S.)
+    "PHYSBA": PhysicsBAProgramScraper,  # Physics (B.A.)
+    "CHEM": ChemistryBSProgramScraper,  # Chemistry (B.S.)
+    "CHEMBIO": ChemistryBSBiochemProgramScraper,  # Chemistry (B.S. — Biochem option)
+    "CHEMBA": ChemistryBAProgramScraper,  # Chemistry (B.A.)
     # ── Life & Earth Sciences ───────────────────────────────────
-    "BIO":       BiologyProgramScraper,                       # Biology (B.S.)
-    "EARTH":     EarthSystemScienceProgramScraper,            # Earth System Science (B.S.)
-    "CRSCI":     ConservationProgramScraper,                  # Conservation & Restoration Science (B.S.)
-    "ENVSTUD":   EnvironmentalStudiesProgramScraper,          # Environmental Studies (B.A.)
+    "BIO": BiologyProgramScraper,  # Biology (B.S.)
+    "EARTH": EarthSystemScienceProgramScraper,  # Earth System Science (B.S.)
+    "CRSCI": ConservationProgramScraper,  # Conservation & Restoration Science (B.S.)
+    "ENVSTUD": EnvironmentalStudiesProgramScraper,  # Environmental Studies (B.A.)
     # ── Data Visualization (IAS, two variants) ──────────────────
-    "DVBS":      DataVisualizationBSProgramScraper,           # Data Visualization (B.S.)
-    "DVBA":      DataVisualizationBAProgramScraper,           # Data Visualization (B.A.)
+    "DVBS": DataVisualizationBSProgramScraper,  # Data Visualization (B.S.)
+    "DVBA": DataVisualizationBAProgramScraper,  # Data Visualization (B.A.)
     # ── Business ────────────────────────────────────────────────
-    "BUSADM":    BusinessAdminProgramScraper,                 # Business Administration (B.A.)
-    "ECON":      EconomicsProgramScraper,                     # Economics (B.S.)
+    "BUSADM": BusinessAdminProgramScraper,  # Business Administration (B.A.)
+    "ECON": EconomicsProgramScraper,  # Economics (B.S.)
     # ── Health & Nursing ────────────────────────────────────────
-    "HS":        HealthStudiesProgramScraper,                 # Health Studies (B.A.)
-    "NURS":      NursingProgramScraper,                       # Nursing (B.S.) — RN to BSN
+    "HS": HealthStudiesProgramScraper,  # Health Studies (B.A.)
+    "NURS": NursingProgramScraper,  # Nursing (B.S.) — RN to BSN
     # ── Education ───────────────────────────────────────────────
-    "EDUC":      EducationalStudiesProgramScraper,            # Educational Studies (B.A.)
-    "DYS":       DevelopmentalYouthStudiesProgramScraper,     # Developmental & Youth Studies (B.A.)
-    "ELEMED":    ElementaryEducationProgramScraper,           # Elementary Education Option (B.A.)
+    "EDUC": EducationalStudiesProgramScraper,  # Educational Studies (B.A.)
+    "DYS": DevelopmentalYouthStudiesProgramScraper,  # Developmental & Youth Studies (B.A.)
+    "ELEMED": ElementaryEducationProgramScraper,  # Elementary Education Option (B.A.)
     # ── IAS — Arts, Humanities, Social Sciences ─────────────────
-    "AES":       AmericanEthnicStudiesProgramScraper,         # American & Ethnic Studies (B.A.)
-    "CLA":       CultureLitArtsProgramScraper,                # Culture, Literature & the Arts (B.A.)
-    "INTART":    InterdisciplinaryArtsProgramScraper,         # Interdisciplinary Arts (B.A.)
-    "ISS":       InterdisciplinarySocialSciencesProgramScraper,  # Interdisciplinary Social Sciences (B.A.)
-    "GWSS":      GWSSProgramScraper,                          # Gender, Women & Sexuality Studies (B.A.)
-    "GLOB":      GlobalStudiesProgramScraper,                 # Global Studies (B.A.)
-    "LEPP":      LawEconPolicyProgramScraper,                 # Law, Economics & Public Policy (B.A.)
-    "MEDCOM":    MediaCommunicationProgramScraper,            # Media & Communication Studies (B.A.)
-    "PSYC":      PsychologyProgramScraper,                    # Psychology (B.A.)
-    "STS":       ScienceTechSocietyProgramScraper,            # Science, Technology & Society (B.A.)
+    "AES": AmericanEthnicStudiesProgramScraper,  # American & Ethnic Studies (B.A.)
+    "CLA": CultureLitArtsProgramScraper,  # Culture, Literature & the Arts (B.A.)
+    "INTART": InterdisciplinaryArtsProgramScraper,  # Interdisciplinary Arts (B.A.)
+    "ISS": InterdisciplinarySocialSciencesProgramScraper,  # Interdisciplinary Social Sciences (B.A.)
+    "GWSS": GWSSProgramScraper,  # Gender, Women & Sexuality Studies (B.A.)
+    "GLOB": GlobalStudiesProgramScraper,  # Global Studies (B.A.)
+    "LEPP": LawEconPolicyProgramScraper,  # Law, Economics & Public Policy (B.A.)
+    "MEDCOM": MediaCommunicationProgramScraper,  # Media & Communication Studies (B.A.)
+    "PSYC": PsychologyProgramScraper,  # Psychology (B.A.)
+    "STS": ScienceTechSocietyProgramScraper,  # Science, Technology & Society (B.A.)
 }
 
 

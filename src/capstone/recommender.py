@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import logging
 import sqlite3
-from dataclasses import dataclass, field
-from typing import Iterable
 
 from pydantic import BaseModel, Field
 
@@ -20,9 +18,7 @@ from capstone.ranker import (
     CourseScore,
     Ranker,
     _course_level,
-    _parse_credits,
     build_completed_grades,
-    build_in_progress_set,
 )
 from capstone.transcript.models import Transcript
 
@@ -30,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 # ── Public output shapes ─────────────────────────────────────────────────
+
 
 class Recommendation(BaseModel):
     """One ranked recommendation, suitable for JSON output to the UI/LLM."""
@@ -74,6 +71,7 @@ class RecommendationResult(BaseModel):
 
 # ── Recommender ──────────────────────────────────────────────────────────
 
+
 class Recommender:
     """Compose the ranker, validator, and fill-to-N planner."""
 
@@ -106,15 +104,15 @@ class Recommender:
 
         # Hard filter — registration constraints
         eligible = [
-            s for s in all_scores
+            s
+            for s in all_scores
             if s.eligibility_ok and s.offered_next_quarter and s.fits_major
         ]
         # Fallback: if filtering by `fits_major` left too few candidates,
         # re-include eligible non-major courses
         if len(eligible) < top_n:
             for s in all_scores:
-                if (s.eligibility_ok and s.offered_next_quarter
-                        and s not in eligible):
+                if s.eligibility_ok and s.offered_next_quarter and s not in eligible:
                     eligible.append(s)
 
         ranked = self.ranker.rank(eligible)
@@ -132,7 +130,9 @@ class Recommender:
         time_pref = parse_time_preference(user_prompt)
         if time_pref.is_active():
             ranked, time_warnings = self._apply_time_preference(
-                ranked, target_quarter, time_pref,
+                ranked,
+                target_quarter,
+                time_pref,
             )
             warnings.extend(time_warnings)
 
@@ -154,7 +154,9 @@ class Recommender:
                 warnings.extend(llm_warnings)
                 llm_used = True
             except Exception as e:
-                logger.warning(f"LLM layer unavailable, falling back to rule-based: {e}")
+                logger.warning(
+                    f"LLM layer unavailable, falling back to rule-based: {e}"
+                )
                 warnings.append(f"LLM reasoning skipped: {e}")
 
         # Prerequisite ordering: if a recommended course is an (unmet)
@@ -162,7 +164,8 @@ class Recommender:
         # you can't take the dependent without it. This runs last so it
         # overrides any LLM reshuffle.
         ranked, prereq_warnings = self._reorder_by_prereqs(
-            ranked, build_completed_grades(transcript),
+            ranked,
+            build_completed_grades(transcript),
         )
         warnings.extend(prereq_warnings)
 
@@ -178,23 +181,28 @@ class Recommender:
         # Look up cached instructor ratings for every recommended course
         # in one pass so we don't N+1 the DB.
         course_to_best_instructor = self._lookup_best_instructors(
-            [s.course_id for s in ranked[:top_n]], target_quarter,
+            [s.course_id for s in ranked[:top_n]],
+            target_quarter,
         )
 
         # Scheduled meeting times (days/times + building/room when
         # available) for every recommended course, in one pass.
         course_to_meetings = self._lookup_sections(
-            [s.course_id for s in ranked[:top_n]], target_quarter,
+            [s.course_id for s in ranked[:top_n]],
+            target_quarter,
         )
 
         recs: list[Recommendation] = []
         for i, s in enumerate(ranked[:top_n], 1):
             soft_edges = [
-                e for e in self.graph.direct_prereqs(s.course_id)
+                e
+                for e in self.graph.direct_prereqs(s.course_id)
                 if e.type == "recommended"
             ]
             done_soft = [e.prereq_id for e in soft_edges if e.prereq_id in completed]
-            missing_soft = [e.prereq_id for e in soft_edges if e.prereq_id not in completed]
+            missing_soft = [
+                e.prereq_id for e in soft_edges if e.prereq_id not in completed
+            ]
 
             recs.append(
                 Recommendation(
@@ -368,7 +376,8 @@ class Recommender:
         from capstone.scheduling import course_fits
 
         sections = self._lookup_sections(
-            [s.course_id for s in ranked], target_quarter,
+            [s.course_id for s in ranked],
+            target_quarter,
         )
 
         fitting: list[CourseScore] = []
@@ -432,13 +441,13 @@ class Recommender:
             needed: set[str] = set()
             for e in self.graph.direct_prereqs(cid):
                 if e.type == "recommended":
-                    continue              # soft prep — not blocking
+                    continue  # soft prep — not blocking
                 if e.group_id and e.group_id > 0:
-                    continue              # one_of — handled by eligibility, skip
+                    continue  # one_of — handled by eligibility, skip
                 if e.prereq_id not in ids:
-                    continue              # prereq isn't recommended — irrelevant
+                    continue  # prereq isn't recommended — irrelevant
                 if _grade_meets(completed.get(e.prereq_id), e.min_grade):
-                    continue              # already satisfied — not a predecessor
+                    continue  # already satisfied — not a predecessor
                 needed.add(e.prereq_id)
             prereqs_within[cid] = needed
 

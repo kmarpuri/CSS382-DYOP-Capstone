@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 
 import networkx as nx
@@ -29,7 +28,7 @@ class TestGraphConstruction:
         # CSS 342 → CSS 343, CSS 370, CSS 422, then transitively CSS 430, CSS 497
         downstream = g.downstream("CSS 342")
         assert "CSS 343" in downstream
-        assert "CSS 430" in downstream     # via CSS 343
+        assert "CSS 430" in downstream  # via CSS 343
         assert "CSS 370" in downstream
         assert "CSS 422" in downstream
 
@@ -112,17 +111,20 @@ class TestPrereqSatisfaction:
 
 
 class TestGradeHelper:
-    @pytest.mark.parametrize("grade, expected", [
-        ("3.5", True),
-        ("2.0", True),
-        ("1.9", False),
-        ("CR", True),
-        ("W", False),
-        ("I", False),
-        ("NC", False),
-        ("", False),
-        (None, False),
-    ])
+    @pytest.mark.parametrize(
+        "grade, expected",
+        [
+            ("3.5", True),
+            ("2.0", True),
+            ("1.9", False),
+            ("CR", True),
+            ("W", False),
+            ("I", False),
+            ("NC", False),
+            ("", False),
+            (None, False),
+        ],
+    )
     def test_grade_meets_default_2_0(self, grade, expected):
         assert _grade_meets(grade, None) is expected
 

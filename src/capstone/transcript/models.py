@@ -27,17 +27,17 @@ class TransferCredit(BaseModel):
     course_id: str
     title: str
     credits: float
-    source: str = "IB"     # "IB", "AP", "TRANSFER", "RUNNING_START"
+    source: str = "IB"  # "IB", "AP", "TRANSFER", "RUNNING_START"
     date_range: str | None = None
 
 
 class CompletedCourse(BaseModel):
     """A completed UW course with a recorded grade."""
 
-    course_id: str         # normalized "CSS 142"
+    course_id: str  # normalized "CSS 142"
     title: str
     credits: float
-    grade: str             # numeric "3.8", or "CR"/"NC"/"W"/"S" etc.
+    grade: str  # numeric "3.8", or "CR"/"NC"/"W"/"S" etc.
     quarter: Quarter
     year: int
 
@@ -62,7 +62,7 @@ class CompletedCourse(BaseModel):
     def meets_prereq_grade(self, min_grade: str | None) -> bool:
         """Return True if this course's grade meets the prereq's minimum."""
         if min_grade is None:
-            min_grade = "2.0"      # UW default for major prereqs
+            min_grade = "2.0"  # UW default for major prereqs
         if self.grade in ("CR", "S", "P"):
             return True
         try:
@@ -87,8 +87,8 @@ class Transcript(BaseModel):
     student_name: str | None = None
     student_id: str | None = None
     campus: str = "Bothell"
-    major: str | None = None            # e.g., "CSSE"
-    class_standing: str | None = None   # e.g., "JUNIOR"
+    major: str | None = None  # e.g., "CSSE"
+    class_standing: str | None = None  # e.g., "JUNIOR"
     current_quarter: str | None = None  # e.g., "SPRING QUARTER, 2026"
 
     completed: list[CompletedCourse] = Field(default_factory=list)

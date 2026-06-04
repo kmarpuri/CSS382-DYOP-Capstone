@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build deps & dev extras
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -e ".[dev,llm,ui,pdf,turso]"
+          .venv/bin/pip install ruff==0.11.0 black==24.1.0 pyright
+
+      - name: Lint (ruff)
+        run: .venv/bin/ruff check .
+
+      - name: Format check (black)
+        run: .venv/bin/black --check .
+
+      - name: Type check (pyright)
+        run: .venv/bin/pyright
+
+      - name: Run tests
+        env:
+          CAPSTONE_SKIP_FIRSTRUN: "1"
+        run: .venv/bin/pytest -q

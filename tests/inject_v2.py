@@ -1,17 +1,17 @@
-import os
-
 with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 
 with open("/tmp/hero_b64.txt", "r") as f:
     b64_img = f.read().strip()
 
-css_start = text.find('/* ── Apple Landing Page Styles ──────────────────────────── */')
-css_end = text.find('</style>')
+css_start = text.find("/* ── Apple Landing Page Styles ──────────────────────────── */")
+css_end = text.find("</style>")
 body_start = text.find('<div id="landing-page"')
-body_end = text.find('<div id="app-container"') + len('<div id="app-container" style="display: none;">')
-js_start = text.find('// ── Landing Page Logic ───────────────────────────────────────')
-js_end = text.find('</script>', js_start)
+body_end = text.find('<div id="app-container"') + len(
+    '<div id="app-container" style="display: none;">'
+)
+js_start = text.find("// ── Landing Page Logic ───────────────────────────────────────")
+js_end = text.find("</script>", js_start)
 
 premium_css = """
   /* ── Premium Apple Landing Page Styles ──────────────────────────── */
@@ -300,7 +300,18 @@ premium_js = """
   }
 """
 
-new_text = text[:css_start] + premium_css + "\n" + text[css_end:body_start] + premium_html + "\n" + text[body_end:js_start] + premium_js + "\n" + text[js_end:]
+new_text = (
+    text[:css_start]
+    + premium_css
+    + "\n"
+    + text[css_end:body_start]
+    + premium_html
+    + "\n"
+    + text[body_end:js_start]
+    + premium_js
+    + "\n"
+    + text[js_end:]
+)
 
 with open("src/capstone/ui/index.html", "w") as f:
     f.write(new_text)

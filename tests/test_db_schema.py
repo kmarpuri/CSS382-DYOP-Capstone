@@ -1,9 +1,5 @@
 """Tests for the database schema and connection management."""
 
-import sqlite3
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from capstone.db.connection import connect, get_connection
@@ -111,9 +107,7 @@ class TestSchema:
         )
         db_conn.commit()
 
-        cur = db_conn.execute(
-            "SELECT * FROM prerequisites WHERE course_id = 'CSS 343'"
-        )
+        cur = db_conn.execute("SELECT * FROM prerequisites WHERE course_id = 'CSS 343'")
         row = cur.fetchone()
         assert row is not None
         assert row["prereq_id"] == "CSS 342"

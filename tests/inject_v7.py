@@ -1,15 +1,19 @@
-import os
-
 with open("src/capstone/ui/index.html", "r") as f:
     text = f.read()
 
-css_start = text.find('/* ── Native Theme Premium Landing Page Styles ──────────────────────────── */')
+css_start = text.find(
+    "/* ── Native Theme Premium Landing Page Styles ──────────────────────────── */"
+)
 if css_start == -1:
-    css_start = text.find('/* ── Native Theme Landing Page Styles ──────────────────────────── */')
-    
-css_end = text.find('</style>')
+    css_start = text.find(
+        "/* ── Native Theme Landing Page Styles ──────────────────────────── */"
+    )
+
+css_end = text.find("</style>")
 body_start = text.find('<div id="landing-page"')
-body_end = text.find('<div id="app-container"') + len('<div id="app-container" style="display: none;">')
+body_end = text.find('<div id="app-container"') + len(
+    '<div id="app-container" style="display: none;">'
+)
 
 v7_css = """
   /* ── Native Theme Expanded Landing Page Styles ──────────────────────────── */
@@ -351,7 +355,15 @@ v7_html = """
 <div id="app-container" style="display: none;">
 """
 
-new_text = text[:css_start] + v7_css + "\n" + text[css_end:body_start] + v7_html + "\n" + text[body_end:]
+new_text = (
+    text[:css_start]
+    + v7_css
+    + "\n"
+    + text[css_end:body_start]
+    + v7_html
+    + "\n"
+    + text[body_end:]
+)
 
 with open("src/capstone/ui/index.html", "w") as f:
     f.write(new_text)

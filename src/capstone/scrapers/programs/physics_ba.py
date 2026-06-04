@@ -20,21 +20,30 @@ class PhysicsBAProgramScraper(ProgramScraper):
     major_name = "Physics (B.A.)"
 
     CORE = [
-        "B PHYS 121", "B PHYS 122", "B PHYS 123",   # Intro sequence
-        "B PHYS 224", "B PHYS 225",                 # Thermal + Modern
-        "B PHYS 321",                               # Classical Mechanics
-        "B PHYS 322",                               # Electromagnetism
-        "B PHYS 324",                               # Quantum Mechanics I
+        "B PHYS 121",
+        "B PHYS 122",
+        "B PHYS 123",  # Intro sequence
+        "B PHYS 224",
+        "B PHYS 225",  # Thermal + Modern
+        "B PHYS 321",  # Classical Mechanics
+        "B PHYS 322",  # Electromagnetism
+        "B PHYS 324",  # Quantum Mechanics I
     ]
     CAPSTONE = ["B PHYS 495"]
     MATH_PREREQS = ["STMATH 124", "STMATH 125", "STMATH 126", "STMATH 207"]
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("B PHYS 321", ["STMATH 207"],
-         "Classical mechanics leans heavily on ODE methods."),
-        ("B PHYS 322", ["B PHYS 122"],
-         "Upper-division E&M extends intro E&M's field framework."),
+        (
+            "B PHYS 321",
+            ["STMATH 207"],
+            "Classical mechanics leans heavily on ODE methods.",
+        ),
+        (
+            "B PHYS 322",
+            ["B PHYS 122"],
+            "Upper-division E&M extends intro E&M's field framework.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -45,8 +54,13 @@ class PhysicsBAProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "math", self.MATH_PREREQS)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
-        self._insert_req(conn, "elective", "B PHYS 300+", required_count=10,
-                         notes="10 credits of upper-division physics electives")
+        self._insert_req(
+            conn,
+            "elective",
+            "B PHYS 300+",
+            required_count=10,
+            notes="10 credits of upper-division physics electives",
+        )
         count += 1
         synergy_count = self.seed_synergies(conn)
         self._record_scrape_metadata(conn, timestamp=now, record_count=count)

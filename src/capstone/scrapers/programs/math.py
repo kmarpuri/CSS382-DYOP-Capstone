@@ -46,7 +46,7 @@ class MathProgramScraper(ProgramScraper):
     STATS_OPTIONS = ["STMATH 341", "STMATH 390", "STMATH 392"]
 
     # Capstone / research
-    CAPSTONE = ["STMATH 499"]   # Undergraduate Research in Mathematics
+    CAPSTONE = ["STMATH 499"]  # Undergraduate Research in Mathematics
 
     # Programming literacy is now expected of math majors
     PROGRAMMING = ["CSS 142"]
@@ -55,19 +55,37 @@ class MathProgramScraper(ProgramScraper):
     WRITING_PREREQS = ["B WRIT 134", "B WRIT 135"]
 
     synergies = [
-        ("STMATH 402", ["STMATH 300"],
-         "Foundations introduces the proof techniques that abstract algebra "
-         "demands constantly."),
-        ("STMATH 424", ["STMATH 300"],
-         "Real Analysis is a proof-heavy course — Foundations is the natural prep."),
-        ("STMATH 425", ["STMATH 424"],
-         "Real Analysis I builds the topology and limit machinery used in II."),
-        ("STMATH 403", ["STMATH 402"],
-         "Abstract Algebra II picks up directly where I left off — groups → rings → fields."),
-        ("STMATH 224", ["STMATH 126"],
-         "Multivariable calculus builds on Calc III's series and parametric tools."),
-        ("STMATH 405", ["STMATH 208"],
-         "Numerical Analysis assumes comfort with linear systems and matrix algebra."),
+        (
+            "STMATH 402",
+            ["STMATH 300"],
+            "Foundations introduces the proof techniques that abstract algebra "
+            "demands constantly.",
+        ),
+        (
+            "STMATH 424",
+            ["STMATH 300"],
+            "Real Analysis is a proof-heavy course — Foundations is the natural prep.",
+        ),
+        (
+            "STMATH 425",
+            ["STMATH 424"],
+            "Real Analysis I builds the topology and limit machinery used in II.",
+        ),
+        (
+            "STMATH 403",
+            ["STMATH 402"],
+            "Abstract Algebra II picks up directly where I left off — groups → rings → fields.",
+        ),
+        (
+            "STMATH 224",
+            ["STMATH 126"],
+            "Multivariable calculus builds on Calc III's series and parametric tools.",
+        ),
+        (
+            "STMATH 405",
+            ["STMATH 208"],
+            "Numerical Analysis assumes comfort with linear systems and matrix algebra.",
+        ),
     ]
 
     def scrape_requirements(self, conn: sqlite3.Connection) -> int:
@@ -83,14 +101,19 @@ class MathProgramScraper(ProgramScraper):
         count += self._insert_each(conn, "core", self.ABSTRACT_ALGEBRA)
         count += self._insert_each(conn, "core", self.REAL_ANALYSIS)
         count += self._insert_pick_one_group(
-            conn, "stats", self.STATS_OPTIONS,
-            group_id=1, notes="Pick one statistics or probability course",
+            conn,
+            "stats",
+            self.STATS_OPTIONS,
+            group_id=1,
+            notes="Pick one statistics or probability course",
         )
         count += self._insert_each(conn, "capstone", self.CAPSTONE)
         count += self._insert_each(conn, "programming", self.PROGRAMMING)
         count += self._insert_each(conn, "writing", self.WRITING_PREREQS)
         self._insert_req(
-            conn, "elective", "STMATH 400+",
+            conn,
+            "elective",
+            "STMATH 400+",
             required_count=15,
             notes="15 credits of upper-division math electives",
         )

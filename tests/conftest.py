@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import datetime, timezone
 
 import pytest
@@ -52,8 +51,8 @@ def fixture_db(tmp_path):
     courses = [
         ("CSS 142", "Computer Programming I"),
         ("CSS 143", "Computer Programming II"),
-        ("CSE 142", "Computer Programming I"),    # alt
-        ("CSE 143", "Computer Programming II"),   # alt
+        ("CSE 142", "Computer Programming I"),  # alt
+        ("CSE 143", "Computer Programming II"),  # alt
         ("CSS 301", "Technical Writing"),
         ("CSS 342", "Data Structures I", "5", "A,W,Sp"),
         ("CSS 343", "Data Structures II", "5", "A,W,Sp"),
@@ -65,7 +64,7 @@ def fixture_db(tmp_path):
         ("CSS 497", "CS & SE Capstone", "5", "A,W,Sp"),
         ("STMATH 124", "Calculus I"),
         ("STMATH 125", "Calculus II"),
-        ("MATH 125", "Calculus II"),               # alt
+        ("MATH 125", "Calculus II"),  # alt
         ("B BUS 215", "Intro to Business Stats"),
         ("B WRIT 134", "Composition"),
         ("B WRIT 135", "Research Writing"),
@@ -97,8 +96,16 @@ def fixture_db(tmp_path):
     _add_prereq(conn, "CSS 360", "CSS 350", "recommended")
 
     # CSSE major requirements
-    csse_core = ["CSS 342", "CSS 343", "CSS 360", "CSS 370", "CSS 350",
-                 "CSS 301", "CSS 422", "CSS 430"]
+    csse_core = [
+        "CSS 342",
+        "CSS 343",
+        "CSS 360",
+        "CSS 370",
+        "CSS 350",
+        "CSS 301",
+        "CSS 422",
+        "CSS 430",
+    ]
     for cid in csse_core:
         conn.execute(
             "INSERT INTO major_requirements (major, category, course_id) VALUES (?,?,?)",

@@ -29,8 +29,8 @@ class PrereqEdge:
 
     prereq_id: str
     course_id: str
-    type: str          # "required", "concurrent", "recommended", "one_of"
-    group_id: int      # OR-clauses share a group_id
+    type: str  # "required", "concurrent", "recommended", "one_of"
+    group_id: int  # OR-clauses share a group_id
     min_grade: str | None
 
 
@@ -81,7 +81,7 @@ class PrereqGraph:
             if row["prereq_id"] not in g:
                 g.add_node(row["prereq_id"], placeholder=True)
             if row["course_id"] not in g:
-                continue   # course not in catalog — skip
+                continue  # course not in catalog — skip
             g.add_edge(
                 row["prereq_id"],
                 row["course_id"],
@@ -207,8 +207,10 @@ class PrereqGraph:
         for gid, options in by_group.items():
             if gid == 0:
                 continue
-            if any(_grade_meets(completed_grades.get(opt.prereq_id), opt.min_grade)
-                   for opt in options):
+            if any(
+                _grade_meets(completed_grades.get(opt.prereq_id), opt.min_grade)
+                for opt in options
+            ):
                 continue
             opt_names = " or ".join(o.prereq_id for o in options)
             reasons.append(f"missing one_of {{{opt_names}}}")
@@ -217,6 +219,7 @@ class PrereqGraph:
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
+
 
 def _grade_meets(grade: str | None, min_grade: str | None) -> bool:
     """Return True if ``grade`` satisfies ``min_grade`` (default 2.0 per UW)."""

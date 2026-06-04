@@ -57,14 +57,17 @@ class TestFullPipeline:
 
         # Recommend (no LLM) — with a user_prompt that should be accepted
         # but harmless because LLM is off.
-        r = client.post("/api/recommend", json={
-            "transcript": transcript,
-            "target_quarter": "AUT",
-            "credit_load": 15,
-            "top_n": 5,
-            "use_llm": False,
-            "user_prompt": "I prefer morning classes",
-        })
+        r = client.post(
+            "/api/recommend",
+            json={
+                "transcript": transcript,
+                "target_quarter": "AUT",
+                "credit_load": 15,
+                "top_n": 5,
+                "use_llm": False,
+                "user_prompt": "I prefer morning classes",
+            },
+        )
         assert r.status_code == 200
         result = r.json()
         assert 0 < result["total_credits"] <= 17
@@ -77,28 +80,35 @@ class TestFullPipeline:
 
 class TestUserPromptPlumbing:
     """The user_prompt field on RecommendRequest must:
-       * default to "" so old clients keep working
-       * be accepted with no LLM
-       * be capped at 2000 chars (validation, not silent truncation)
+    * default to "" so old clients keep working
+    * be accepted with no LLM
+    * be capped at 2000 chars (validation, not silent truncation)
     """
 
     def test_default_empty(self, client):
         from capstone.api import RecommendRequest
+
         req = RecommendRequest.model_validate({"transcript": {"major": "CSSE"}})
         assert req.user_prompt == ""
 
     def test_accepts_prompt(self, client):
         from capstone.api import RecommendRequest
-        req = RecommendRequest.model_validate({
-            "transcript": {"major": "CSSE"},
-            "user_prompt": "no Friday classes please",
-        })
+
+        req = RecommendRequest.model_validate(
+            {
+                "transcript": {"major": "CSSE"},
+                "user_prompt": "no Friday classes please",
+            }
+        )
         assert req.user_prompt == "no Friday classes please"
 
     def test_rejects_oversized_prompt(self, client):
         from capstone.api import RecommendRequest
+
         with pytest.raises(Exception):  # pydantic.ValidationError
-            RecommendRequest.model_validate({
-                "transcript": {"major": "CSSE"},
-                "user_prompt": "x" * 2001,
-            })
+            RecommendRequest.model_validate(
+                {
+                    "transcript": {"major": "CSSE"},
+                    "user_prompt": "x" * 2001,
+                }
+            )

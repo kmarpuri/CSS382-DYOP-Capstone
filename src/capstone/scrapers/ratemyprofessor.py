@@ -146,9 +146,7 @@ class RateMyProfessorScraper:
         timeout: float = 15.0,
     ):
         self.school_name = (
-            school_name
-            or os.environ.get("CAPSTONE_RMP_SCHOOL")
-            or DEFAULT_SCHOOL
+            school_name or os.environ.get("CAPSTONE_RMP_SCHOOL") or DEFAULT_SCHOOL
         )
         self.rate_limit = rate_limit
         self._last_request_at = 0.0
@@ -268,9 +266,7 @@ class RateMyProfessorScraper:
         Returns the number of rows inserted/updated.
         """
         school_legacy_id, school_gid, exact_name = self.resolve_school_id()
-        logger.info(
-            f"Scraping {exact_name} (RMP school ID {school_legacy_id})…"
-        )
+        logger.info(f"Scraping {exact_name} (RMP school ID {school_legacy_id})…")
 
         now = datetime.now(timezone.utc).isoformat()
         inserted = 0
@@ -385,7 +381,8 @@ def lookup_ratings(
             "department": row["department"],
             "rmp_url": (
                 f"https://www.ratemyprofessors.com/professor/{row['rmp_legacy_id']}"
-                if row["rmp_legacy_id"] else None
+                if row["rmp_legacy_id"]
+                else None
             ),
         }
     return out

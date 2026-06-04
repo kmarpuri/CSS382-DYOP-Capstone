@@ -28,6 +28,7 @@ from capstone.db.schema import get_scrape_stats, init_db, reset_db
 # Fails silently if python-dotenv isn't installed (it's in the `llm` extra).
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -98,7 +99,7 @@ def scrape_refresh(
     config = load_config()
     db_path = config.database.resolve_path(PROJECT_ROOT)
 
-    console.print(f"\n[bold blue]Capstone Scraper[/bold blue]")
+    console.print("\n[bold blue]Capstone Scraper[/bold blue]")
     console.print(f"Database: {db_path}")
 
     with get_connection(db_path) as conn:
@@ -113,7 +114,9 @@ def scrape_refresh(
 
         from capstone.scrapers.catalog import CatalogScraper
 
-        dept_list = list(departments) if departments else config.scraper.bothell_departments
+        dept_list = (
+            list(departments) if departments else config.scraper.bothell_departments
+        )
 
         with CatalogScraper(
             departments=dept_list,
@@ -164,7 +167,8 @@ def scrape_refresh(
             if major:
                 wanted = {m.upper() for m in major}
                 scrapers_to_run = {
-                    code: cls for code, cls in PROGRAM_SCRAPERS.items()
+                    code: cls
+                    for code, cls in PROGRAM_SCRAPERS.items()
                     if code in wanted
                 }
                 missing = wanted - set(scrapers_to_run)
@@ -221,13 +225,21 @@ def scrape_refresh(
 
 
 @scrape.command("professors")
-@click.option("--limit", type=int, default=None,
-              help="Stop after N professors (debug / quick refresh)")
-@click.option("--force", is_flag=True,
-              help="Re-fetch even professors whose cache is still fresh")
-@click.option("--school", default=None,
-              help='RMP school name (default: UW Bothell). '
-                   'Also settable via CAPSTONE_RMP_SCHOOL env var.')
+@click.option(
+    "--limit",
+    type=int,
+    default=None,
+    help="Stop after N professors (debug / quick refresh)",
+)
+@click.option(
+    "--force", is_flag=True, help="Re-fetch even professors whose cache is still fresh"
+)
+@click.option(
+    "--school",
+    default=None,
+    help="RMP school name (default: UW Bothell). "
+    "Also settable via CAPSTONE_RMP_SCHOOL env var.",
+)
 def scrape_professors(limit: int | None, force: bool, school: str | None) -> None:
     """Scrape RateMyProfessor for the configured school.
 
@@ -268,7 +280,9 @@ def scrape_status() -> None:
     db_path = config.database.resolve_path(PROJECT_ROOT)
 
     if not db_path.exists():
-        console.print("[yellow]No database found. Run 'capstone scrape refresh' first.[/yellow]")
+        console.print(
+            "[yellow]No database found. Run 'capstone scrape refresh' first.[/yellow]"
+        )
         return
 
     with get_connection(db_path) as conn:
@@ -276,7 +290,9 @@ def scrape_status() -> None:
         stats = get_scrape_stats(conn)
 
         if not stats:
-            console.print("[yellow]No scrape data found. Run 'capstone scrape refresh' first.[/yellow]")
+            console.print(
+                "[yellow]No scrape data found. Run 'capstone scrape refresh' first.[/yellow]"
+            )
             return
 
         table = Table(title="Scrape Status")
@@ -303,10 +319,18 @@ def scrape_status() -> None:
 
 
 @cli.command("parse-transcript")
-@click.argument("pdf_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option("-o", "--output", type=click.Path(dir_okay=False, path_type=Path),
-              help="Write JSON to this path (default: stdout)")
-@click.option("--debug", is_flag=True, help="Dump intermediate parser state on failures")
+@click.argument(
+    "pdf_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Write JSON to this path (default: stdout)",
+)
+@click.option(
+    "--debug", is_flag=True, help="Dump intermediate parser state on failures"
+)
 def parse_transcript_cmd(pdf_path: Path, output: Path | None, debug: bool) -> None:
     """Parse a UW transcript PDF and emit structured JSON."""
     from capstone.transcript import parse_transcript
@@ -337,15 +361,30 @@ def parse_transcript_cmd(pdf_path: Path, output: Path | None, debug: bool) -> No
 
 
 @cli.command("recommend")
-@click.argument("transcript_json", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option("--load", "credit_load", type=int, default=None,
-              help="Target credit load (default: from config)")
+@click.argument(
+    "transcript_json", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--load",
+    "credit_load",
+    type=int,
+    default=None,
+    help="Target credit load (default: from config)",
+)
 @click.option("--top", "top_n", type=int, default=10, help="Show top-N ranked courses")
 @click.option("--quarter", default=None, help="Target quarter (e.g., AUT2026)")
-@click.option("--no-llm", is_flag=True, help="Skip LLM reasoning, return rule-based output only")
-@click.option("--major", default=None, help="Override the major declared on the transcript")
-@click.option("--prompt", "user_prompt", default="",
-              help='Free-form constraints for the LLM (e.g., "prefer mornings, no Fridays")')
+@click.option(
+    "--no-llm", is_flag=True, help="Skip LLM reasoning, return rule-based output only"
+)
+@click.option(
+    "--major", default=None, help="Override the major declared on the transcript"
+)
+@click.option(
+    "--prompt",
+    "user_prompt",
+    default="",
+    help='Free-form constraints for the LLM (e.g., "prefer mornings, no Fridays")',
+)
 def recommend_cmd(
     transcript_json: Path,
     credit_load: int | None,
@@ -390,7 +429,9 @@ def recommend_cmd(
         )
 
     # Render
-    table = Table(title=f"Top {top_n} Recommendations for {transcript.major or 'student'}")
+    table = Table(
+        title=f"Top {top_n} Recommendations for {transcript.major or 'student'}"
+    )
     table.add_column("Rank", justify="right")
     table.add_column("Course", style="cyan")
     table.add_column("Title")
@@ -422,10 +463,13 @@ def recommend_cmd(
 
 
 @cli.command("setup")
-@click.option("--yes", "non_interactive", is_flag=True,
-              help="Don't prompt for confirmation; accept all install steps.")
-@click.option("--model", default=None,
-              help="Override the recommended model to pull.")
+@click.option(
+    "--yes",
+    "non_interactive",
+    is_flag=True,
+    help="Don't prompt for confirmation; accept all install steps.",
+)
+@click.option("--model", default=None, help="Override the recommended model to pull.")
 def setup_cmd(non_interactive: bool, model: str | None) -> None:
     """One-time setup: install Ollama (with consent) and pull the LLM model."""
     from capstone.firstrun import run_first_run_setup
