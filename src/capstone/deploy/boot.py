@@ -21,7 +21,7 @@ import sys
 
 from capstone.config import PROJECT_ROOT, load_config
 from capstone.db.connection import connect, using_turso
-from capstone.db.schema import get_scrape_stats, init_db
+from capstone.db.schema import init_db
 
 # Make sure GROQ_API_KEY etc. are loaded from .env if present.
 try:
