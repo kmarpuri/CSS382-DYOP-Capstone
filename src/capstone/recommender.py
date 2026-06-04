@@ -97,6 +97,40 @@ class Recommender:
         use_llm: bool = True,
         user_prompt: str = "",
     ) -> RecommendationResult:
+        """Run the full recommendation pipeline and return a structured plan.
+
+        Pipeline stages:
+          1. **Score** — the deterministic ranker scores every catalog course
+             on criticality, availability, progress, and synergy.
+          2. **Filter** — only eligible, offered, major-relevant courses
+             survive (with fallback relaxation if too few remain).
+          3. **Time preference** — parse the user's free-form prompt for
+             day/time constraints and drop courses that conflict.
+          4. **LLM rerank** (optional) — send the top candidates to the
+             local or hosted LLM for reasoning-based reordering.
+          5. **Prereq ordering** — topological sort ensures a prerequisite
+             always appears before the course that depends on it.
+          6. **Fill-to-N** — greedy credit packing to hit the target load
+             while respecting the hard ceiling and difficulty balance.
+          7. **Enrich** — attach instructor ratings (RateMyProfessor cache)
+             and meeting times (UW time schedule) to each recommendation.
+
+        Parameters
+        ----------
+        transcript : Transcript
+            The student's parsed academic record.
+        target_quarter : str, optional
+            3-letter quarter code ('AUT', 'WIN', 'SPR', 'SUM').
+        credit_load : int, optional
+            Target credit hours for the quarter (default from config).
+        top_n : int
+            Maximum number of recommendations to return.
+        use_llm : bool
+            Whether to engage the LLM reasoning layer for reranking.
+        user_prompt : str
+            Free-form text with scheduling preferences (e.g.,
+            "mornings only, no Fridays").
+        """
         if credit_load is None:
             credit_load = self.config.credit_limits.default
 

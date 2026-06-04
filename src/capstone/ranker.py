@@ -103,6 +103,7 @@ def build_completed_grades(transcript: Transcript) -> dict[str, str]:
 
 
 def build_in_progress_set(transcript: Transcript) -> set[str]:
+    """Return the set of course IDs the student is currently enrolled in."""
     return {c.course_id for c in transcript.in_progress}
 
 
@@ -233,6 +234,17 @@ class Ranker:
         Caller can filter by ``eligibility_ok`` to drop unreachables.
 
         ``target_quarter`` is a 3-letter code: 'AUT', 'WIN', 'SPR', 'SUM'.
+
+        Algorithm overview:
+          1. Build the student's completed-grades map and in-progress set.
+          2. Query the time schedule to see which courses are actually
+             offered in the target quarter.
+          3. Identify the student's unmet major requirements.
+          4. For every course in the catalog, compute four independent
+             scores: criticality (DAG impact), availability (scarcity),
+             progress (major advancement), and synergy (soft-prereq
+             readiness).
+          5. Mark each course as eligible/ineligible based on prereqs.
         """
         if target_quarter:
             target_quarter = target_quarter.upper()[:3]
@@ -451,6 +463,12 @@ class Ranker:
 
 
 def _passes(grade: str) -> bool:
+    """Return True if the grade counts as a passing mark.
+
+    Credit/Satisfactory/Pass grades always pass. Numeric grades must
+    meet the UW minimum of 0.7 (a D+). Withdraw/Incomplete/etc. do
+    not pass.
+    """
     if grade in ("CR", "S", "P"):
         return True
     try:
